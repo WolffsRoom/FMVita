@@ -1,12 +1,12 @@
 # FMVita
 
-**FMVita** é um fork do **VitaShell** (TheFloW) com mudanças focadas em usabilidade, theme engine, background animado, sistema de Undo e reorganização completa dos dados para `ux0:FMVita/`.
+**FMVita** é um fork do **VitaShell** (TheFloW) com mudanças focadas em usabilidade, principalmente na adição do uso da tela touchscreen do PSVita, com inclusão de backgrounds animados, melhorias QoL e reorganização completa dos dados para `ux0:FMVita/`.
 
 ## Diferenças do VitaShell original
 
 ### Novas features
 
-#### Theme Engine & Interface
+#### Interface e Temas
 - **6 presets de cores** configuráveis: Dark, Light, Blue, Red, Purple, Brown — com cálculo automático de cores de texto, destaque, seleção, diálogos e bordas
 - **Toolbar de ações rápidas** com 8 botões: Copiar, Colar, Excluir, Renomear, Filtrar, Agrupar, Pesquisar, Novo
 - **Interface semi-transparente** quando usando background de imagem (GIF ou PNG) — topbar, cards e botões com alpha reduzido
@@ -15,18 +15,18 @@
 - **2 temas completos** embutidos: Default e Electron (novo)
 
 #### Background Animado
-- **4 animações procedurais**: Particles (ícones PS flutuantes), Waves (névoa colorida), Stars (campo estelar), Squares (retângulos)
+- **4 animações procedurais**: Particles (ícones PlayStation flutuantes), Waves (névoa colorida), Stars (campo estelar), Squares (retângulos, estilo PS2)
 - **GIF animado** como background (modo 4) — carregado de `ux0:FMVita/Gif/theme.gif` com fallbacks múltiplos
 - **PNG estático** como background (modo 5) — carregado de `ux0:FMVita/Background/bg.png`
 - Engine GIF baseada em stb_image com delays por frame, scaling cover-fit e clipping
 
-#### Column View
+#### Visualização em colunas
 - **Visualização em 3 colunas** (avô/pai/atual) para navegação rápida entre diretórios
 - Coluna da esquerda mostra conteúdo do diretório avô, coluna do meio mostra o pai, direita mostra o atual
 - Destaque em dourado para a pasta atual nas colunas pai/avô
 - Toque em coluna navega para aquele diretório
 
-#### Undo System
+#### Sistema de Refazer
 - Desfaz **Move** e **Copy** via contexto (`UNDO_ACTION`)
 - Undo de Move reverte o `sceIoRename`
 - Undo de Copy deleta o arquivo copiado
@@ -66,10 +66,6 @@
 - **HENkaku Settings**: PSN spoofing, unsafe homebrew toggle, version spoofing — removidos do menu (código ainda existe na struct como inutilizado)
 - **Disable Auto-Update**: campo no struct mas não aparece no menu
 - **Disable Warning Messages**: campo no struct mas não aparece no menu
-- **Enable Rear Touch Drag**: renomeado `_unused_rear_touchpad`, funcionalidade removida
-- **Lixeira**: exclusão é sempre permanente (junto com sistema de trash)
-- **GIF Overlay Alpha**: removido das configurações
-- **Enable GIF BG**: removido (GIF controlado exclusivamente por `background_anim == 4`)
 
 ### Mudanças de paths
 | Original VitaShell | FMVita |
