@@ -2146,6 +2146,7 @@ FONT_Y_SPACE) - (MAX_ENTRIES * FONT_Y_SPACE);
         // File information
         if (strcmp(file_entry->name, DIR_UP) != 0 && vitashell_config.view_mode == 0) {
           float draw_y_info = y + 8.0f;
+          if (draw_y_info + 20 < SCREEN_HEIGHT - STATUSBAR_H) {
           if (dir_level == 0) {
             char used_size_string[16], max_size_string[16];
             int max_size_x = ALIGN_RIGHT(INFORMATION_X, pgf_text_width("0000.00 MB"));
@@ -2188,6 +2189,7 @@ FONT_Y_SPACE) - (MAX_ENTRIES * FONT_Y_SPACE);
 
           float x = ALIGN_RIGHT(SCREEN_WIDTH - SHELL_MARGIN_X, pgf_text_width(string));
           pgf_draw_text(x, draw_y_info, color, string);
+          }
         }
 
         // Next

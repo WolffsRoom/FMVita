@@ -350,7 +350,7 @@ void drawShellInfo(const char *path) {
     vita2d_draw_rectangle(0, hy+HEADER_H-1, SCREEN_WIDTH, 1, COLOR_ALPHA(t_txt, 10));
 
     unsigned int hc = COLOR_ALPHA(themeTextDim(vitashell_config.theme_preset), 200);
-    float ty = hy + HEADER_H - 7;
+    float ty = hy + 6;
 
     if (vitashell_config.view_mode != 1) {
       pgf_draw_text(FILE_X, ty, hc, "Nome");
