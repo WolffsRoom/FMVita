@@ -2192,12 +2192,14 @@ skip_touch_processing:
     // Disable clip so floating buttons and dialogs render everywhere
     vita2d_disable_clipping();
 
+    drawStatusBar();
+
     // Floating action buttons (bottom-right)
     if (getDialogStep() == DIALOG_STEP_NONE && getContextMenuMode() == CONTEXT_MENU_CLOSED &&
         getSettingsMenuStatus() == SETTINGS_MENU_CLOSED) {
       int btn_size = 48, btn_gap = 12;
       int btn_rx = SCREEN_WIDTH - 20 - btn_size;
-      int btn_plus_y = SCREEN_HEIGHT - 20 - btn_size;
+      int btn_plus_y = SCREEN_HEIGHT - STATUSBAR_H - 12 - btn_size;
       int btn_bmk_y = btn_plus_y - btn_size - btn_gap;
       // Floating + button
       vita2d_draw_rectangle(btn_rx, btn_plus_y, btn_size, btn_size, RGBA8(50, 140, 220, 220));

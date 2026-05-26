@@ -194,6 +194,38 @@ void setDialogStep(int step) {
   sceKernelUnlockLwMutex(&dialog_mutex, 1);
 }
 
+void drawStatusBar() {
+  unsigned int sb_bg = COLOR_ALPHA(themeCardBg(vitashell_config.theme_preset), 200);
+  unsigned int sb_col = themeTextDim(vitashell_config.theme_preset);
+  unsigned int sb_acc = themeAccentColor(vitashell_config.theme_preset);
+
+  int y = SCREEN_HEIGHT - STATUSBAR_H;
+  vita2d_draw_rectangle(0, y, SCREEN_WIDTH, STATUSBAR_H, sb_bg);
+  vita2d_draw_rectangle(0, y, SCREEN_WIDTH, 1, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 16));
+
+  float ty = y + STATUSBAR_H - 8;
+
+  char cnt[32];
+  snprintf(cnt, sizeof(cnt), "%d %s", file_list.length, "itens");
+  pgf_draw_text(SHELL_MARGIN_X, ty, sb_col, cnt);
+
+  const char *hints = "▲▼ navega  ✕ abre  ○ volta";
+  pgf_draw_text(ALIGN_RIGHT(SCREEN_WIDTH-SHELL_MARGIN_X, pgf_text_width(hints)), ty, sb_col, hints);
+
+  int si = base_pos + rel_pos;
+  if (file_list.length > 0 && si >= 0 && si < file_list.length) {
+    FileListEntry *e = fileListGetNthEntry(&file_list, si);
+    if (e && !e->is_folder && e->size >= 0) {
+      char sz[16];
+      getSizeString(sz, e->size);
+      float cw = pgf_text_width(sz) + 16;
+      float cx = (SCREEN_WIDTH - cw) / 2.0f;
+      vita2d_draw_rectangle(cx, y+4, cw, STATUSBAR_H-8, COLOR_ALPHA(sb_acc, 30));
+      pgf_draw_text(cx+8, ty, sb_acc, sz);
+    }
+  }
+}
+
 void drawScrollBar(int pos, int n) {
   int limit = (vitashell_config.view_mode != 1) ? 11 : 16;
   if (n > limit) {
@@ -211,124 +243,124 @@ void drawScrollBar(int pos, int n) {
 }
 
 void drawShellInfo(const char *path) {
-  const int BAR_H = 96;
-
   int is_img_bg = (vitashell_config.background_anim >= 4);
   unsigned int t_top = is_img_bg ? COLOR_ALPHA(themeTopbarBg(vitashell_config.theme_preset), 200) : themeTopbarBg(vitashell_config.theme_preset);
   unsigned int t_txt = themeTopbarText(vitashell_config.theme_preset);
-  vita2d_draw_rectangle(0, 0, SCREEN_WIDTH, BAR_H, t_top);
-  vita2d_draw_rectangle(0, BAR_H, SCREEN_WIDTH, 1, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 16));
-  vita2d_draw_rectangle(0, 0, SCREEN_WIDTH, 1, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 8));
-
   unsigned int t_card = is_img_bg ? COLOR_ALPHA(themeCardBg(vitashell_config.theme_preset), 160) : themeCardBg(vitashell_config.theme_preset);
-  // ---- Row 1: Address Card (y:6-44, h:38) ----
+
+  int full_h = 96;
+  vita2d_draw_rectangle(0, 0, SCREEN_WIDTH, full_h, t_top);
+  vita2d_draw_rectangle(0, full_h, SCREEN_WIDTH, 1, COLOR_ALPHA(t_txt, 16));
+  vita2d_draw_rectangle(0, 0, SCREEN_WIDTH, 1, COLOR_ALPHA(t_txt, 8));
+
+  // ---- Row 1: Title area ----
   {
-    int acx = 10, acy = 6, acw = SCREEN_WIDTH - 20, ach = 38;
-    vita2d_draw_rectangle(acx, acy, acw, ach, t_card);
-    vita2d_draw_rectangle(acx, acy + ach - 1, acw, 1, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 8));
+    int dot_clr[] = {RGBA8(255,95,87,200), RGBA8(255,188,46,200), RGBA8(61,200,80,200)};
+    for (int i = 0; i < 3; i++)
+      vita2d_draw_fill_circle(16 + i*18, 16, 5, dot_clr[i]);
 
     char short_path[256];
     int plen = strlen(path);
-    int max_chars = 46;
-    if (plen > max_chars) {
-      snprintf(short_path, sizeof(short_path), "...%s", path + plen - (max_chars - 3));
-    } else {
+    int max_ch = 48;
+    if (plen > max_ch)
+      snprintf(short_path, sizeof(short_path), "...%s", path + plen - (max_ch - 3));
+    else
       snprintf(short_path, sizeof(short_path), "%s", path);
-    }
-    pgf_draw_text(acx + 10, acy + 10, t_txt, short_path);
+    pgf_draw_text(70, 8, t_txt, short_path);
 
-    float sx = acx + acw - 10;
+    float sx = SCREEN_WIDTH - 10;
+    SceDateTime time;
+    sceRtcGetCurrentClock(&time, 0);
+    char ts[24];
+    getTimeString(ts, time_format, &time);
+    sx -= pgf_text_width(ts);
+    pgf_draw_text(sx, 8, DATE_TIME_COLOR, ts);
+    sx -= STATUS_BAR_SPACE_X;
+    if (ftpvita_is_initialized() && ftp_image) {
+      sx -= vita2d_texture_get_width(ftp_image);
+      vita2d_draw_texture(ftp_image, sx, 4);
+      sx -= STATUS_BAR_SPACE_X;
+    }
     if (sceKernelGetModel() == SCE_KERNEL_MODEL_VITA) {
-      float bat_x = sx - vita2d_texture_get_width(battery_image);
-      vita2d_draw_texture(battery_image, bat_x, acy + 9);
+      sx -= vita2d_texture_get_width(battery_image);
+      vita2d_draw_texture(battery_image, sx, 5);
       vita2d_texture *bbi = battery_bar_green_image;
       if (scePowerIsLowBattery() && !scePowerIsBatteryCharging()) bbi = battery_bar_red_image;
       float pct = scePowerGetBatteryLifePercent() / 100.0f;
       float bw = vita2d_texture_get_width(bbi);
-      vita2d_draw_texture_part(bbi, bat_x + 3.0f + (1.0f - pct) * bw, acy + 11.0f,
-        (1.0f - pct) * bw, 0.0f, pct * bw, vita2d_texture_get_height(bbi));
-      if (scePowerIsBatteryCharging())
-        vita2d_draw_texture(battery_bar_charge_image, bat_x + 3.0f, acy + 11.0f);
-      sx = bat_x - STATUS_BAR_SPACE_X;
+      vita2d_draw_texture_part(bbi, sx+3.0f+(1.0f-pct)*bw, 7.0f, (1.0f-pct)*bw, 0, pct*bw, vita2d_texture_get_height(bbi));
+      if (scePowerIsBatteryCharging()) vita2d_draw_texture(battery_bar_charge_image, sx+3.0f, 7.0f);
     }
-
-    if (ftpvita_is_initialized() && ftp_image) {
-      float ftp_x = sx - vita2d_texture_get_width(ftp_image);
-      vita2d_draw_texture(ftp_image, ftp_x, acy + (ach - vita2d_texture_get_height(ftp_image)) / 2);
-      sx = ftp_x - STATUS_BAR_SPACE_X;
-    }
-
-    SceDateTime time;
-    sceRtcGetCurrentClock(&time, 0);
-    char time_str[24];
-    getTimeString(time_str, time_format, &time);
-    float time_x = sx - pgf_text_width(time_str);
-    pgf_draw_text(time_x, acy + 10, DATE_TIME_COLOR, time_str);
   }
 
-  // ---- Row 2: Quick Actions (y:50-90, h:40) ----
+  // ---- Separator ----
+  vita2d_draw_rectangle(10, 29, SCREEN_WIDTH-20, 1, COLOR_ALPHA(t_txt, 10));
+
+  // ---- Row 2: Toolbar ----
   {
-    int abx = 10, aby = 50, abw = 110, abh = 40, gap = 6;
-    const char *ab_labels[] = {
-      language_container[COPY],
-      language_container[PASTE],
-      language_container[DELETE],
-      language_container[RENAME],
-      language_container[FILTER],
-      language_container[GROUP],
-      language_container[SEARCH],
-      language_container[NEW]
-    };
+    int aby = 32, abh = 38;
+    const char *ab_labels[] = {language_container[COPY], language_container[PASTE], language_container[DELETE], language_container[RENAME], language_container[FILTER], language_container[GROUP], language_container[SEARCH], language_container[NEW]};
     int is_root = (strchr(path, '/') == NULL);
     unsigned int t_btn_acc = is_img_bg ? COLOR_ALPHA(themeButtonAccent(vitashell_config.theme_preset), 180) : themeButtonAccent(vitashell_config.theme_preset);
     unsigned int t_btn_suc = is_img_bg ? COLOR_ALPHA(themeButtonSuccess(vitashell_config.theme_preset), 180) : themeButtonSuccess(vitashell_config.theme_preset);
     unsigned int t_btn_dng = is_img_bg ? COLOR_ALPHA(themeButtonDanger(vitashell_config.theme_preset), 180) : themeButtonDanger(vitashell_config.theme_preset);
     unsigned int t_btn_def = is_img_bg ? COLOR_ALPHA(themeButtonDefault(vitashell_config.theme_preset), 180) : themeButtonDefault(vitashell_config.theme_preset);
-    unsigned int ab_colors[8];
     unsigned int ab_disabled = COLOR_ALPHA(themeTextDim(vitashell_config.theme_preset), 80);
-    unsigned int t_gold = (vitashell_config.theme_preset == THEME_PRESET_LIGHT) ? RGBA8(180, 150, 30, 220) : RGBA8(200, 170, 40, 210);
-    unsigned int t_orange = (vitashell_config.theme_preset == THEME_PRESET_LIGHT) ? RGBA8(180, 100, 40, 220) : RGBA8(200, 120, 50, 230);
-    unsigned int t_purple = (vitashell_config.theme_preset == THEME_PRESET_LIGHT) ? RGBA8(110, 60, 180, 220) : RGBA8(130, 80, 200, 210);
-    unsigned int t_teal = (vitashell_config.theme_preset == THEME_PRESET_LIGHT) ? RGBA8(30, 140, 170, 220) : RGBA8(40, 160, 190, 210);
-    unsigned int t_newg = (vitashell_config.theme_preset == THEME_PRESET_LIGHT) ? RGBA8(50, 160, 60, 220) : RGBA8(60, 180, 70, 210);
-    ab_colors[0] = is_root ? ab_disabled : t_btn_acc;
-    ab_colors[1] = is_root ? ab_disabled : t_btn_suc;
-    ab_colors[2] = is_root ? ab_disabled : t_btn_dng;
-    ab_colors[3] = is_root ? ab_disabled : t_gold;
-    ab_colors[4] = (filter_mode > 0) ? t_orange : t_purple;
-    ab_colors[5] = t_teal;
-    ab_colors[6] = search_active ? t_btn_suc : t_btn_def;
-    ab_colors[7] = t_newg;
-    char search_label[16];
-    for (int bi = 0; bi < 8; bi++) {
-      int bi_disabled = (is_root && bi < 4);
-      if (!bi_disabled) {
-        vita2d_draw_rectangle(abx, aby, abw, abh, ab_colors[bi]);
-        vita2d_draw_rectangle(abx, aby, abw, 2, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 22));
-        vita2d_draw_rectangle(abx, aby + abh - 1, abw, 1, COLOR_ALPHA(themeTextColor(vitashell_config.theme_preset), 15));
+    unsigned int t_gold = (vitashell_config.theme_preset == THEME_PRESET_LIGHT) ? RGBA8(180,150,30,220) : RGBA8(200,170,40,210);
+    unsigned int t_orange = (vitashell_config.theme_preset == THEME_PRESET_LIGHT) ? RGBA8(180,100,40,220) : RGBA8(200,120,50,230);
+    unsigned int t_purple = (vitashell_config.theme_preset == THEME_PRESET_LIGHT) ? RGBA8(110,60,180,220) : RGBA8(130,80,200,210);
+    unsigned int t_teal = (vitashell_config.theme_preset == THEME_PRESET_LIGHT) ? RGBA8(30,140,170,220) : RGBA8(40,160,190,210);
+    unsigned int t_newg = (vitashell_config.theme_preset == THEME_PRESET_LIGHT) ? RGBA8(50,160,60,220) : RGBA8(60,180,70,210);
+    unsigned int ab_colors[8] = {is_root?ab_disabled:t_btn_acc, is_root?ab_disabled:t_btn_suc, is_root?ab_disabled:t_btn_dng, is_root?ab_disabled:t_gold, (filter_mode>0)?t_orange:t_purple, t_teal, search_active?t_btn_suc:t_btn_def, t_newg};
+
+    char search_lbl[16];
+    int n = 8, bw = 105, gap = 5;
+
+    for (int bi = 0; bi < n; bi++) {
+      int bx = 10 + bi * (bw + gap);
+      int disabled = (is_root && bi < 4);
+
+      if (!disabled) {
+        vita2d_draw_rectangle(bx, aby, bw, abh, COLOR_ALPHA(themeCardBg(vitashell_config.theme_preset), 160));
+        vita2d_draw_rectangle(bx, aby, bw, 2, ab_colors[bi]);
+        vita2d_draw_rectangle(bx, aby+abh-1, bw, 1, COLOR_ALPHA(t_txt, 8));
       } else {
-        vita2d_draw_rectangle(abx, aby, abw, abh, ab_colors[bi]);
-        vita2d_draw_rectangle(abx, aby, abw, 1, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 6));
+        vita2d_draw_rectangle(bx, aby, bw, abh, COLOR_ALPHA(themeTextDim(vitashell_config.theme_preset), 30));
+        vita2d_draw_rectangle(bx, aby, bw, 1, COLOR_ALPHA(t_txt, 5));
       }
-      const char *label = ab_labels[bi];
+
+      const char *lbl = ab_labels[bi];
       if (bi == 4) {
-        const char *filter_map[] = {
-          language_container[FILTER_ALL],
-          language_container[FILTER_FOLDERS],
-          language_container[FILTER_FILES]
-        };
-        label = filter_map[filter_mode];
+        const char *fm[] = {language_container[FILTER_ALL], language_container[FILTER_FOLDERS], language_container[FILTER_FILES]};
+        lbl = fm[filter_mode];
       } else if (bi == 5) {
-        label = (sort_mode == SORT_BY_NAME) ? language_container[BY_NAME] : language_container[BY_SIZE];
+        lbl = (sort_mode == SORT_BY_NAME) ? language_container[BY_NAME] : language_container[BY_SIZE];
       } else if (bi == 6 && search_active) {
-        snprintf(search_label, sizeof(search_label), "%.11s...", search_term);
-        if (strlen(search_term) <= 11) label = search_term;
-        else label = search_label;
+        snprintf(search_lbl, sizeof(search_lbl), "%.11s...", search_term);
+        if (strlen(search_term) <= 11) lbl = search_term;
+        else lbl = search_lbl;
       }
-      unsigned int text_col = bi_disabled ? COLOR_ALPHA(themeTextDim(vitashell_config.theme_preset), 120) : themeTextColor(vitashell_config.theme_preset);
-      float lw = pgf_text_width(label);
-      pgf_draw_text(abx + (abw - lw) / 2.0f, aby + 10, text_col, label);
-      abx += abw + gap;
+      unsigned int tc = disabled ? COLOR_ALPHA(themeTextDim(vitashell_config.theme_preset), 120) : themeTextColor(vitashell_config.theme_preset);
+      float lw = pgf_text_width(lbl);
+      pgf_draw_text(bx + (bw - lw)/2.0f, aby+8, tc, lbl);
+    }
+  }
+
+  // ---- Row 3: Header row ----
+  {
+    int hy = 74;
+    vita2d_draw_rectangle(0, hy, SCREEN_WIDTH, HEADER_H, t_card);
+    vita2d_draw_rectangle(0, hy+HEADER_H-1, SCREEN_WIDTH, 1, COLOR_ALPHA(t_txt, 10));
+
+    unsigned int hc = COLOR_ALPHA(themeTextDim(vitashell_config.theme_preset), 200);
+    float ty = hy + HEADER_H - 7;
+
+    if (vitashell_config.view_mode != 1) {
+      pgf_draw_text(FILE_X, ty, hc, "Nome");
+      if (vitashell_config.view_mode == 0) {
+        pgf_draw_text(ALIGN_RIGHT(INFORMATION_X, pgf_text_width("Tamanho")), ty, hc, "Tamanho");
+        pgf_draw_text(ALIGN_RIGHT(SCREEN_WIDTH-SHELL_MARGIN_X, pgf_text_width("Data")), ty, hc, "Data");
+      }
     }
   }
 }
