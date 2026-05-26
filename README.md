@@ -3,109 +3,109 @@
   <h1>FMVita</h1>
   <h3>File Manager Vita</h3>
   <p align="center">
-    <a href="#instalação">Instalação</a> •
-    <a href="#principais-diferenças-e-novas-funcionalidades">Funcionalidades</a> •
-    <a href="#mudanças-de-estrutura-de-diretórios">Diretórios</a> •
-    <a href="#detalhes-técnicos-e-build">Build</a>
+    <a href="#installation">Installation</a> •
+    <a href="#key-differences-and-new-features">Features</a> •
+    <a href="#directory-structure-changes">Directories</a> •
+    <a href="#technical-details-and-build">Build</a>
   </p>
 </div>
 
 ---
 
-**FMVita** é um fork aprimorado do **VitaShell** (criado por *TheFloW*). Esta versão foca em **usabilidade**, expandindo o suporte à tela *touchscreen* do PS Vita, introduzindo *backgrounds* animados, diversas melhorias de Qualidade de Vida (QoL) e uma nova organização dos arquivos do programa para o diretório independente `ux0:FMVita/`.
+**FMVita** is an enhanced fork of **VitaShell** (originally created by *TheFloW*). This version focuses on **usability**, expanding touchscreen support for the PS Vita, introducing animated backgrounds, various Quality of Life (QoL) improvements, and a new program file organization under the independent directory `ux0:FMVita/`.
 
 <div align="center">
-  <img src="https://github.com/WolffsRoom/FMVita/raw/master/media/Tela%20Inicial.png" alt="Tela Inicial" width="80%">
+  <img src="https://github.com/WolffsRoom/FMVita/raw/master/media/Tela%20Inicial.png" alt="Home Screen" width="80%">
 </div>
 
 ---
 
-## Instalação
+## Installation
 
-O FMVita foi projetado para evitar problemas com suas configurações atuais. Por isso ele possui um **Title ID exclusivo** e estrutura de pastas própria.
+FMVita was designed to prevent conflicts with your current configuration. Therefore, it features a **unique Title ID** and its own dedicated folder structure.
 
-* **Zero Conflitos:** Pode ser instalado lado a lado com o VitaShell original, OneMenuPlus, MolecularShell ou qualquer outro gerenciador.
-* **Como instalar:** Basta transferir o arquivo `.vpk` do FMVita para o console (via FTP ou USB) e instalá-lo usando o VitaShell (ou qualquer outro aplicativo gerenciador de arquivos que você já possua).
-
----
-
-## Principais Diferenças e Novas Funcionalidades
-
-### Interface e Temas
-
-<div align="center">
-  <img src="https://github.com/WolffsRoom/FMVita/raw/master/media/Modo%20Grid.png" alt="Modo Grid" width="80%">
-</div>
-
-* **Seis Presets de Cores:** *Dark, Light, Blue, Red, Purple* e *Brown*. O sistema calcula automaticamente as cores de texto, destaque, seleção, diálogos e bordas.
-* **Menu de Ação Rápida:** Nova barra de ferramentas com 8 atalhos rápidos: *Copiar, Colar, Excluir, Renomear, Filtrar, Agrupar, Pesquisar* e *Novo*.
-* **Transparência:** Interface (topbar, cards e botões) com canal alpha reduzido ao utilizar imagens de fundo (GIF ou PNG) para melhor visualização.
-* **Scrollbar Temático:** Barra de rolagem adaptativa que acompanha a cor de destaque do tema.
-* **Barra de Endereço Redesenhada:** Agora exibe o caminho atual (*path*), status da bateria e relógio.
-* **Suporte Parcial a Temas VitaShell:** Dada a natureza do projeto original, os temas desenvolvidos para ele não são 100% compatíveis nesta versão, aproveitando apenas alguns elementos como os ícones de arquivos. 
-
-### Backgrounds Animados
-
-* **Quatro Animações Procedurais:** *Particles* (ícones PlayStation flutuantes), *Waves* (névoa colorida), *Stars* (campo estelar) e *Squares* (retângulos com estética PS2).
-* **Suporte a GIF Animado:** Carregamento de `ux0:FMVita/Gif/theme.gif` (Modo 4) com *fallbacks* múltiplos. Motor baseado em `stb_image` com controle de atraso por frame, dimensionamento *cover-fit* e *clipping*.
-* **Suporte a PNG Estático:** Carregamento nativo de `ux0:FMVita/Background/bg.png` (Modo 5).
-
-### Suporte a Touch Screen
-
-<div align="center">
-  <img src="https://github.com/WolffsRoom/FMVita/raw/master/media/FTP%20Server.png" alt="Servidor FTP" width="80%">
-</div>
-
-* **Diálogos Nativos:** O antigo sistema YES/NO foi substituído por **Touch Dialogs** (Confirmação, Exclusão e FTP) estilizados com os ícones dos botões PlayStation.
-* **Drag-and-Drop (Arrastar e Soltar):** Segure `Quadrado` + Toque (ou apenas pressione longamente) para arrastar arquivos para outras pastas. Inclui *Auto-scroll* ao aproximar o item das bordas.
-* **Swipe Gestures:** Deslize para a Esquerda para *Voltar*, Direita para *Entrar*.
-* **Multi-tap:** Toque duplo segurado para abrir o menu de contexto.
-* **Mouse Cursor:** Controle um ponteiro de mouse com o analógico direito (clique com `Cross`), com efeito de *fade* após inatividade.
-
-### Navegação e Visualização
-
-<div align="center">
-  <img src="https://github.com/WolffsRoom/FMVita/raw/master/media/Modo%20Coluna.png" alt="Modo Coluna 1" width="49%">
-  <img src="https://github.com/WolffsRoom/FMVita/raw/master/media/Modo%20Coluna2.png" alt="Modo Coluna 2" width="49%">
-</div>
-
-* **Column View:** Inovadora visualização em 3 colunas (*Avô / Pai / Atual*) para navegação ultrarrápida. Destaque em dourado para a pasta ativa nas colunas superiores e navegação por toque direto na coluna.
-* **Bookmarks e Recentes:** Atalho `Quadrado` pula para os favoritos; Atalho `Triângulo` vai para arquivos recentes (que geram *symlinks* `.lnk` automaticamente).
-* **Ferramentas de Busca:** Sistema de Filtro (All/Folders/Files) na toolbar e Pesquisa *case-insensitive* no diretório atual.
-* **Scroll Aprimorado:** Scroll infinito (*wrapping* do topo para o fim) e rolagem suave (baseada em *lerp* com aceleração).
-* **Symlinks:** Rastreamento otimizado via lista encadeada `SymlinkDirectoryPath` para navigation correta em atalhos.
-
-### Sistema de Refazer (Undo)
-
-* Desfaça ações de **Move** e **Copy** diretamente pelo menu de contexto (`UNDO_ACTION`).
-* *Undo de Move:* Reverte o comando `sceIoRename`.
-* *Undo de Copy:* Deleta de forma limpa o arquivo copiado por engano.
-* O botão de *Undo* aparece dinamicamente e também registra ações feitas por *Drag-and-Drop*.
-
-### Segurança e Configuração
-
-<div align="center">
-  <img src="https://github.com/WolffsRoom/FMVita/raw/master/media/Tela%20de%20Config.png" alt="Tela de Configuração" width="80%">
-</div>
-
-* **Proteção de Sistema:** Bloqueio de renomeação em pastas críticas do sistema (verificadas via `isProtectedPath()`) com mensagens de erro customizadas.
-* **Configurações Independentes:** Lê e escreve diretamente em `ux0:FMVita/settings.txt` (`use_custom_config = 1` por padrão; pode ser desativado segurando `L` no boot).
-* **Novas Opções no Menu:** *USB Device* (4 modos), *SELECT Button* (USB/FTP), *View Mode* (List/Grid/Column), *Background Anim* (6 modos) e *Theme Preset* (6 cores).
+* **Zero Conflicts:** It can be installed side-by-side with the original VitaShell, OneMenuPlus, MolecularShell, or any other file manager.
+* **How to Install:** Simply transfer the FMVita `.vpk` file to your console (via FTP or USB) and install it using VitaShell (or any other file manager application you currently use).
 
 ---
 
-## Recursos Removidos e Otimizações
+## Key Differences and New Features
 
-Para manter o aplicativo leve e focado no gerenciamento de arquivos, os seguintes recursos do VitaShell original foram descontinuados/ocultados:
-* Menu **HENkaku Settings** (PSN spoofing, unsafe homebrew toggle, version spoofing).
-* *Disable Auto-Update* e *Disable Warning Messages*.
-* Suporte ao *Rear Touchpad*.
+### Interface and Themes
+
+<div align="center">
+  <img src="https://github.com/WolffsRoom/FMVita/raw/master/media/Modo%20Grid.png" alt="Grid Mode" width="80%">
+</div>
+
+* **Six Color Presets:** *Dark, Light, Blue, Red, Purple*, and *Brown*. The system automatically calculates text, highlight, selection, dialog, and border colors.
+* **Quick Action Toolbar:** A new toolbar featuring 8 quick shortcuts: *Copy, Paste, Delete, Rename, Filter, Group, Search*, and *New*.
+* **Transparency:** The interface elements (topbar, cards, and buttons) feature a reduced alpha channel when using image backgrounds (GIF or PNG) for better visibility.
+* **Themed Scrollbar:** An adaptive scrollbar that matches the theme's highlight color.
+* **Redesigned Address Bar:** Now displays the current directory path, battery status, and clock.
+* **Partial Support for VitaShell Themes:** Due to the nature of the original project, themes developed for VitaShell are not 100% compatible with this version, only taking advantage of certain elements such as file icons.
+
+### Animated Backgrounds
+
+* **Four Procedural Animations:** *Particles* (floating PlayStation icons), *Waves* (colored mist), *Stars* (starfield), and *Squares* (PS2-styled falling rectangles).
+* **Animated GIF Support:** Loads from `ux0:FMVita/Gif/theme.gif` (Mode 4) with multiple fallbacks. Powered by an `stb_image` engine featuring frame delay control, cover-fit scaling, and clipping.
+* **Static PNG Support:** Native loading from `ux0:FMVita/Background/bg.png` (Mode 5).
+
+### Touchscreen Support
+
+<div align="center">
+  <img src="https://github.com/WolffsRoom/FMVita/raw/master/media/FTP%20Server.png" alt="FTP Server" width="80%">
+</div>
+
+* **Native Dialogs:** The old system YES/NO prompt has been replaced by custom **Touch Dialogs** (Confirmation, Deletion, and FTP) styled with PlayStation button icons.
+* **Drag-and-Drop:** Hold `Square` + Touch (or perform a long press) to drag files into other folders. Features *Auto-scroll* when moving items near the screen edges.
+* **Swipe Gestures:** Swipe Left to go *Back*, Swipe Right to *Enter*.
+* **Multi-tap:** Double-tap and hold to open the context menu.
+* **Mouse Cursor:** Control a mouse pointer using the right analog stick (click with `Cross`), featuring a smooth fade effect after inactivity.
+
+### Navigation and Layout
+
+<div align="center">
+  <img src="https://github.com/WolffsRoom/FMVita/raw/master/media/Modo%20Coluna.png" alt="Column Mode 1" width="49%">
+  <img src="https://github.com/WolffsRoom/FMVita/raw/master/media/Modo%20Coluna2.png" alt="Column Mode 2" width="49%">
+</div>
+
+* **Column View:** An innovative 3-column layout (*Grandparent / Parent / Current*) for ultra-fast directory browsing. Highlights the active folder in gold within the upper columns and allows direct touch navigation on any column.
+* **Bookmarks and Recents:** The `Square` shortcut jumps directly to your bookmarks; the `Triangle` shortcut navigates to recent files (which automatically generate `.lnk` symlinks).
+* **Search Tools:** A Filter system (All/Folders/Files) on the toolbar and case-insensitive Search within the current directory.
+* **Enhanced Scrolling:** Infinite scroll wrapping (from top to bottom and vice versa) and smooth lerp-based scrolling with acceleration.
+* **Symlinks:** Optimized tracking via a `SymlinkDirectoryPath` linked list to ensure correct navigation through shortcuts.
+
+### Undo System
+
+* Undo **Move** and **Copy** actions directly from the context menu (`UNDO_ACTION`).
+* *Undo Move:* Reverts the `sceIoRename` command.
+* *Undo Copy:* Cleanly deletes the file copied by mistake.
+* The *Undo* option appears dynamically and also registers actions performed via Drag-and-Drop.
+
+### Security and Configuration
+
+<div align="center">
+  <img src="https://github.com/WolffsRoom/FMVita/raw/master/media/Tela%20de%20Config.png" alt="Configuration Screen" width="80%">
+</div>
+
+* **System Protection:** Renaming locks on critical system folders (verified via `isProtectedPath()`) with custom error messages.
+* **Independent Settings:** Reads and writes directly to `ux0:FMVita/settings.txt` (`use_custom_config = 1` by default; can be temporarily disabled by holding `L` during boot).
+* **New Menu Options:** *USB Device* (4 modes), *SELECT Button* (USB/FTP), *View Mode* (List/Grid/Column), *Background Anim* (6 modes), and *Theme Preset* (6 colors).
 
 ---
 
-## Mudanças de Estrutura de Diretórios
+## Removed Features and Optimizations
 
-O FMVita isola todos os seus dados do VitaShell original:
+To keep the application lightweight and focused purely on file management, the following features from the original VitaShell have been deprecated or hidden:
+* **HENkaku Settings** menu (PSN spoofing, unsafe homebrew toggle, version spoofing).
+* *Disable Auto-Update* and *Disable Warning Messages*.
+* *Rear Touchpad* support.
+
+---
+
+## Directory Structure Changes
+
+FMVita completely isolates its data from the original VitaShell:
 
 | Original (VitaShell) | FMVita |
 | :--- | :--- |
@@ -116,21 +116,21 @@ O FMVita isola todos os seus dados do VitaShell original:
 | `ux0:VitaShell/bookmarks/` | `ux0:FMVita/bookmarks/` |
 | `ux0:data/recent/` | `ux0:FMVITA/recent/` |
 | `ux0:app/VITASHELL/module/*` | `ux0:FMVita/module/*` |
-| *(Não existia)* | `ux0:FMVita/Gif/theme.gif` |
-| *(Não existia)* | `ux0:FMVita/Background/bg.png` |
+| *(Did not exist)* | `ux0:FMVita/Gif/theme.gif` |
+| *(Did not exist)* | `ux0:FMVita/Background/bg.png` |
 
 ---
 
-## Detalhes Técnicos e Build
+## Technical Details and Build
 
-### Modificações no Código-Fonte
-* **Novos Módulos:** `modules/kernel/` (carrega `umass.skprx` próprio), `modules/patch/`, `modules/user/` e driver `usbdevice/`.
-* **Novos Arquivos:** Implementação de `buttons.c/.h` para ícones do PS, `main_context.c` para submenus organizados e engine decodificadora com `stb_image.h`.
-* **Tradução (`english_us.txt`):** Mais de 27 novas entradas integradas e copiadas para o diretório nativo na primeira execução.
-* **Refatoração Interna:** Mais de 30 funções inline de cores no `main.h`, reestruturação do `browser.c` (D-PAD scroll fix, column view, touch engine) e limpeza de opções antigas no `settings.c`.
+### Source Code Modifications
+* **New Modules:** `modules/kernel/` (loads its own `umass.skprx`), `modules/patch/`, `modules/user/`, and the `usbdevice/` driver.
+* **New Files:** Implemented `buttons.c/.h` for PlayStation button rendering, `main_context.c` for reorganized context submenus, and a GIF decoding engine using `stb_image.h`.
+* **Localization (`english_us.txt`):** Over 27 new entries integrated and copied to the native directory upon first launch.
+* **Internal Refactoring:** Added over 30 inline theme color functions in `main.h`, restructured `browser.c` (fixing D-PAD scroll issues, column view, touch engine), and cleaned up legacy options in `settings.c`.
 
-### Instruções de Build
-Requer [vitasdk](https://github.com/vitasdk) e os toolchains padrão instalados e configurados.
+### Build Instructions
+Requires [vitasdk](https://github.com/vitasdk) and the standard toolchains properly installed and configured.
 
 ```bash
 mkdir build
@@ -139,16 +139,16 @@ cmake ..
 make
 ```
 
-## Créditos
-* **TheFloW** — Criador do VitaShell original.
+## Credits
+* **TheFloW** — Creator of the original VitaShell.
 * **Team Molecule** — HENkaku.
-* **xerpi** — Bibliotecas ftpvitalib e vita2dlib.
-* **Sean Barrett** — Implementação do stb_image.
-* **WolffsRoom** — Desenvolvimento, modificações visuais e engine do FMVita.
+* **xerpi** — ftpvitalib and vita2dlib libraries.
+* **Sean Barrett** — stb_image implementation.
+* **WolffsRoom** — FMVita development, visual modifications, and engine.
 
 ---
 
 ## AI Notice
-Ferramentas de Inteligência Artificial foram utilizadas como suporte durante o desenvolvimento deste projeto:
-* **Gemini e DeepSeek:** Auxiliaram na correção de bugs, resolução de problemas lógicos e otimização do código em C e C++.
-* **Claude:** Utilizado para o desenvolvimento de ideias, estruturação do projeto e prototipação de novas funcionalidades.
+Artificial Intelligence tools were utilized as a support resource during the development of this project:
+* **Gemini and DeepSeek:** Assisted in bug fixing, logical troubleshooting, and C/C++ code optimization.
+* **Claude:** Used for brainstorming, project structuring, and prototyping new features.
