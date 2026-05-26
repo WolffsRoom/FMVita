@@ -11,7 +11,7 @@
 
 ## Instalação
 
-O FMVita foi projetado para conviver pacificamente com o seu ecossistema atual. Ele possui um **Title ID exclusivo** e estrutura de pastas própria.
+O FMVita foi projetado para evitar problemas com suas configurações atuais. Por isso ele possui um **Title ID exclusivo** e estrutura de pastas própria.
 
 * **Zero Conflitos:** Pode ser instalado lado a lado com o VitaShell original, OneMenuPlus, MolecularShell ou qualquer outro gerenciador.
 * **Como instalar:** Basta transferir o arquivo `.vpk` do FMVita para o console (via FTP ou USB) e instalá-lo usando o VitaShell (ou qualquer outro aplicativo gerenciador de arquivos que você já possua).
