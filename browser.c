@@ -1110,22 +1110,24 @@ int browserMain() {
           if (my >= 5 && my < 45) {
             // Address card — open context menu
           } else if (my >= 50 && my < 90) {
-            if (mx >= 8 && mx < 118) {
+            if (mx >= 8 && mx < 106) {
+              if (dir_level > 0) contextMenuMainEnterCallback(MENU_MAIN_ENTRY_MOVE, NULL);
+            } else if (mx >= 106 && mx < 204) {
               if (dir_level > 0) contextMenuMainEnterCallback(MENU_MAIN_ENTRY_COPY, NULL);
-            } else if (mx >= 124 && mx < 234) {
+            } else if (mx >= 204 && mx < 302) {
               if (dir_level > 0) contextMenuMainEnterCallback(MENU_MAIN_ENTRY_PASTE, NULL);
-            } else if (mx >= 240 && mx < 350) {
+            } else if (mx >= 302 && mx < 400) {
               if (dir_level > 0) contextMenuMainEnterCallback(MENU_MAIN_ENTRY_DELETE, NULL);
-            } else if (mx >= 356 && mx < 466) {
+            } else if (mx >= 400 && mx < 498) {
               if (dir_level > 0) contextMenuMainEnterCallback(MENU_MAIN_ENTRY_RENAME, NULL);
-            } else if (mx >= 472 && mx < 582) {
+            } else if (mx >= 498 && mx < 596) {
               filter_mode = (filter_mode + 1) % 3;
               refreshFileList();
-            } else if (mx >= 588 && mx < 698) {
+            } else if (mx >= 596 && mx < 694) {
               sort_mode = (sort_mode % 2) + 1;
               last_set_sort_mode = sort_mode;
               refreshFileList();
-            } else if (mx >= 704 && mx < 814) {
+            } else if (mx >= 694 && mx < 792) {
               if (search_active) {
                 search_active = 0;
                 search_term[0] = '\0';
@@ -1134,7 +1136,7 @@ int browserMain() {
                 initImeDialog(language_container[SEARCH], "", 255, SCE_IME_TYPE_DEFAULT, 0, 0);
                 setDialogStep(DIALOG_STEP_SEARCH);
               }
-            } else if (mx >= 820 && mx < 930) {
+            } else if (mx >= 792 && mx < 890) {
               if (dir_level > 0) {
                 setContextMenu(&context_menu_new);
                 setContextMenuNewVisibilities();
@@ -1256,16 +1258,17 @@ int browserMain() {
                         goto skip_touch_processing;
                     } else if (ty >= 50 && ty < 90) {
                         // Quick action buttons — execute immediately, keep touch tracking
-                        if (tx >= 8 && tx < 118) { if (dir_level > 0) contextMenuMainEnterCallback(MENU_MAIN_ENTRY_COPY, NULL); }
-                        else if (tx >= 124 && tx < 234) { if (dir_level > 0) contextMenuMainEnterCallback(MENU_MAIN_ENTRY_PASTE, NULL); }
-                        else if (tx >= 240 && tx < 350) { if (dir_level > 0) contextMenuMainEnterCallback(MENU_MAIN_ENTRY_DELETE, NULL); }
-                        else if (tx >= 356 && tx < 466) { if (dir_level > 0) contextMenuMainEnterCallback(MENU_MAIN_ENTRY_RENAME, NULL); }
-                        else if (tx >= 472 && tx < 582) { filter_mode = (filter_mode + 1) % 3; refreshFileList(); }
-                        else if (tx >= 588 && tx < 698) { sort_mode = (sort_mode % 2) + 1; last_set_sort_mode = sort_mode; refreshFileList(); }
-                        else if (tx >= 704 && tx < 814) {
+                        if (tx >= 8 && tx < 106) { if (dir_level > 0) contextMenuMainEnterCallback(MENU_MAIN_ENTRY_MOVE, NULL); }
+                        else if (tx >= 106 && tx < 204) { if (dir_level > 0) contextMenuMainEnterCallback(MENU_MAIN_ENTRY_COPY, NULL); }
+                        else if (tx >= 204 && tx < 302) { if (dir_level > 0) contextMenuMainEnterCallback(MENU_MAIN_ENTRY_PASTE, NULL); }
+                        else if (tx >= 302 && tx < 400) { if (dir_level > 0) contextMenuMainEnterCallback(MENU_MAIN_ENTRY_DELETE, NULL); }
+                        else if (tx >= 400 && tx < 498) { if (dir_level > 0) contextMenuMainEnterCallback(MENU_MAIN_ENTRY_RENAME, NULL); }
+                        else if (tx >= 498 && tx < 596) { filter_mode = (filter_mode + 1) % 3; refreshFileList(); }
+                        else if (tx >= 596 && tx < 694) { sort_mode = (sort_mode % 2) + 1; last_set_sort_mode = sort_mode; refreshFileList(); }
+                        else if (tx >= 694 && tx < 792) {
                             if (search_active) { search_active = 0; search_term[0] = '\0'; refreshFileList(); }
                             else { initImeDialog(language_container[SEARCH], "", 255, SCE_IME_TYPE_DEFAULT, 0, 0); setDialogStep(DIALOG_STEP_SEARCH); }
-                        } else if (tx >= 820 && tx < 930) {
+                        } else if (tx >= 792 && tx < 890) {
                             if (dir_level > 0) { setContextMenu(&context_menu_new); setContextMenuNewVisibilities(); setContextMenuMode(CONTEXT_MENU_OPENING); }
                             is_touching = 0;
                             goto skip_touch_processing;
@@ -1444,22 +1447,24 @@ skip_touch_processing:
                             setContextMenuMode(CONTEXT_MENU_OPENING);
                           // Quick actions row (y:50-90)
                           } else if (ty >= 50 && ty < 90) {
-                               if (tx >= 8 && tx < 118) {          // Copiar
+                               if (tx >= 8 && tx < 106) {          // Mover
+                                   if (dir_level > 0) contextMenuMainEnterCallback(MENU_MAIN_ENTRY_MOVE, NULL);
+                               } else if (tx >= 106 && tx < 204) { // Copiar
                                    if (dir_level > 0) contextMenuMainEnterCallback(MENU_MAIN_ENTRY_COPY, NULL);
-                               } else if (tx >= 124 && tx < 234) { // Colar
+                               } else if (tx >= 204 && tx < 302) { // Colar
                                    if (dir_level > 0) contextMenuMainEnterCallback(MENU_MAIN_ENTRY_PASTE, NULL);
-                               } else if (tx >= 240 && tx < 350) { // Apagar
+                               } else if (tx >= 302 && tx < 400) { // Apagar
                                    if (dir_level > 0) contextMenuMainEnterCallback(MENU_MAIN_ENTRY_DELETE, NULL);
-                               } else if (tx >= 356 && tx < 466) { // Renomear
+                               } else if (tx >= 400 && tx < 498) { // Renomear
                                    if (dir_level > 0) contextMenuMainEnterCallback(MENU_MAIN_ENTRY_RENAME, NULL);
-                               } else if (tx >= 472 && tx < 582) { // Filtrar
+                               } else if (tx >= 498 && tx < 596) { // Filtrar
                                    filter_mode = (filter_mode + 1) % 3;
                                    refreshFileList();
-                                } else if (tx >= 588 && tx < 698) { // Agrupar
+                                } else if (tx >= 596 && tx < 694) { // Agrupar
                                     sort_mode = (sort_mode % 2) + 1;
                                     last_set_sort_mode = sort_mode;
                                     refreshFileList();
-                                } else if (tx >= 704 && tx < 814) { // Buscar
+                                } else if (tx >= 694 && tx < 792) { // Buscar
                                     if (search_active) {
                                         search_active = 0;
                                         search_term[0] = '\0';
@@ -1468,7 +1473,7 @@ skip_touch_processing:
                                          initImeDialog(language_container[SEARCH], "", 255, SCE_IME_TYPE_DEFAULT, 0, 0);
                                          setDialogStep(DIALOG_STEP_SEARCH);
                                      }
-                                } else if (tx >= 820 && tx < 930) { // Novo
+                                } else if (tx >= 792 && tx < 890) { // Novo
                                     if (dir_level > 0) {
                                         setContextMenu(&context_menu_new);
                                         setContextMenuNewVisibilities();
@@ -1710,7 +1715,8 @@ skip_touch_processing:
 
     if (target_scroll_y < 0) target_scroll_y = 0;
     float max_scroll = 0;
-     if (vitashell_config.view_mode != 1) max_scroll = (file_list.length * FONT_Y_SPACE) - (11 * FONT_Y_SPACE);
+     if (vitashell_config.view_mode != 1) max_scroll = (file_list.length * 
+FONT_Y_SPACE) - (MAX_ENTRIES * FONT_Y_SPACE);
     else max_scroll = (((file_list.length + GRID_COLS - 1) / GRID_COLS) * GRID_CELL_H) - (5 * GRID_CELL_H);
     
     if (max_scroll < 0) max_scroll = 0;
@@ -1808,8 +1814,8 @@ skip_touch_processing:
 
     drawShellInfo(file_list.path);
 
-    // Clip file list area below the top bar (BAR_H = 96)
-    vita2d_set_clip_rectangle(0, 96, SCREEN_WIDTH, SCREEN_HEIGHT - 96);
+    // Clip file list area: below top bar (96px) to above status bar
+    vita2d_set_clip_rectangle(0, 96, SCREEN_WIDTH, SCREEN_HEIGHT - 96 - STATUSBAR_H);
 
     int start_i = 0;
     if (vitashell_config.view_mode != 1) start_i = (int)(scroll_y / FONT_Y_SPACE);

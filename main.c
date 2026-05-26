@@ -227,7 +227,7 @@ void drawStatusBar() {
 }
 
 void drawScrollBar(int pos, int n) {
-  int limit = (vitashell_config.view_mode != 1) ? 11 : 16;
+  int limit = (vitashell_config.view_mode != 1) ? MAX_ENTRIES : 16;
   if (n > limit) {
     // Thin, minimal scrollbar track
     vita2d_draw_rectangle(SCROLL_BAR_X, START_Y, SCROLL_BAR_WIDTH, limit * FONT_Y_SPACE, COLOR_ALPHA(themeTextDim(vitashell_config.theme_preset), 30));
@@ -255,10 +255,6 @@ void drawShellInfo(const char *path) {
 
   // ---- Row 1: Title area ----
   {
-    int dot_clr[] = {RGBA8(255,95,87,200), RGBA8(255,188,46,200), RGBA8(61,200,80,200)};
-    for (int i = 0; i < 3; i++)
-      vita2d_draw_fill_circle(16 + i*18, 16, 5, dot_clr[i]);
-
     char short_path[256];
     int plen = strlen(path);
     int max_ch = 48;
@@ -266,7 +262,7 @@ void drawShellInfo(const char *path) {
       snprintf(short_path, sizeof(short_path), "...%s", path + plen - (max_ch - 3));
     else
       snprintf(short_path, sizeof(short_path), "%s", path);
-    pgf_draw_text(70, 8, t_txt, short_path);
+    pgf_draw_text(SHELL_MARGIN_X, 8, t_txt, short_path);
 
     float sx = SCREEN_WIDTH - 10;
     SceDateTime time;
@@ -299,7 +295,7 @@ void drawShellInfo(const char *path) {
   // ---- Row 2: Toolbar ----
   {
     int aby = 32, abh = 38;
-    const char *ab_labels[] = {language_container[COPY], language_container[PASTE], language_container[DELETE], language_container[RENAME], language_container[FILTER], language_container[GROUP], language_container[SEARCH], language_container[NEW]};
+    const char *ab_labels[] = {language_container[MOVE], language_container[COPY], language_container[PASTE], language_container[DELETE], language_container[RENAME], language_container[FILTER], language_container[GROUP], language_container[SEARCH], language_container[NEW]};
     int is_root = (strchr(path, '/') == NULL);
     unsigned int t_btn_acc = is_img_bg ? COLOR_ALPHA(themeButtonAccent(vitashell_config.theme_preset), 180) : themeButtonAccent(vitashell_config.theme_preset);
     unsigned int t_btn_suc = is_img_bg ? COLOR_ALPHA(themeButtonSuccess(vitashell_config.theme_preset), 180) : themeButtonSuccess(vitashell_config.theme_preset);
@@ -311,14 +307,15 @@ void drawShellInfo(const char *path) {
     unsigned int t_purple = (vitashell_config.theme_preset == THEME_PRESET_LIGHT) ? RGBA8(110,60,180,220) : RGBA8(130,80,200,210);
     unsigned int t_teal = (vitashell_config.theme_preset == THEME_PRESET_LIGHT) ? RGBA8(30,140,170,220) : RGBA8(40,160,190,210);
     unsigned int t_newg = (vitashell_config.theme_preset == THEME_PRESET_LIGHT) ? RGBA8(50,160,60,220) : RGBA8(60,180,70,210);
-    unsigned int ab_colors[8] = {is_root?ab_disabled:t_btn_acc, is_root?ab_disabled:t_btn_suc, is_root?ab_disabled:t_btn_dng, is_root?ab_disabled:t_gold, (filter_mode>0)?t_orange:t_purple, t_teal, search_active?t_btn_suc:t_btn_def, t_newg};
+    unsigned int t_amber = (vitashell_config.theme_preset == THEME_PRESET_LIGHT) ? RGBA8(200,140,30,220) : RGBA8(230,160,40,220);
+    unsigned int ab_colors[9] = {is_root?ab_disabled:t_amber, is_root?ab_disabled:t_btn_acc, is_root?ab_disabled:t_btn_suc, is_root?ab_disabled:t_btn_dng, is_root?ab_disabled:t_gold, (filter_mode>0)?t_orange:t_purple, t_teal, search_active?t_btn_suc:t_btn_def, t_newg};
 
     char search_lbl[16];
-    int n = 8, bw = 105, gap = 5;
+    int n = 9, bw = 93, gap = 5;
 
     for (int bi = 0; bi < n; bi++) {
       int bx = 10 + bi * (bw + gap);
-      int disabled = (is_root && bi < 4);
+      int disabled = (is_root && bi < 5);
 
       if (!disabled) {
         vita2d_draw_rectangle(bx, aby, bw, abh, COLOR_ALPHA(themeCardBg(vitashell_config.theme_preset), 160));
@@ -330,12 +327,12 @@ void drawShellInfo(const char *path) {
       }
 
       const char *lbl = ab_labels[bi];
-      if (bi == 4) {
+      if (bi == 5) {
         const char *fm[] = {language_container[FILTER_ALL], language_container[FILTER_FOLDERS], language_container[FILTER_FILES]};
         lbl = fm[filter_mode];
-      } else if (bi == 5) {
+      } else if (bi == 6) {
         lbl = (sort_mode == SORT_BY_NAME) ? language_container[BY_NAME] : language_container[BY_SIZE];
-      } else if (bi == 6 && search_active) {
+      } else if (bi == 7 && search_active) {
         snprintf(search_lbl, sizeof(search_lbl), "%.11s...", search_term);
         if (strlen(search_term) <= 11) lbl = search_term;
         else lbl = search_lbl;
