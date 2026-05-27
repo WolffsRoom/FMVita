@@ -203,14 +203,27 @@ void drawStatusBar() {
   vita2d_draw_rectangle(0, y, SCREEN_WIDTH, STATUSBAR_H, sb_bg);
   vita2d_draw_rectangle(0, y, SCREEN_WIDTH, 1, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 16));
 
-  float ty = y + STATUSBAR_H - 8;
+  float ty = y + 8;
 
-  char cnt[32];
-  snprintf(cnt, sizeof(cnt), "%d %s", file_list.length, "itens");
+  SceDateTime now;
+  sceRtcGetCurrentClock(&now, 0);
+  char date_str[24];
+  getDateString(date_str, date_format, &now);
+  char cnt[64];
+  snprintf(cnt, sizeof(cnt), "%d %s  %s", file_list.length, language_container[ITEMS], date_str);
   pgf_draw_text(SHELL_MARGIN_X, ty, sb_col, cnt);
 
-  const char *hints = "▲▼ navega  ✕ abre  ○ volta";
-  pgf_draw_text(ALIGN_RIGHT(SCREEN_WIDTH-SHELL_MARGIN_X, pgf_text_width(hints)), ty, sb_col, hints);
+  // Hints with button textures: (cross) Abrir  (circle) Voltar
+  float hx = ALIGN_RIGHT(SCREEN_WIDTH - SHELL_MARGIN_X, 0);
+  hx -= pgf_text_width(language_container[NAV_BACK]);
+  pgf_draw_text(hx, ty, sb_col, language_container[NAV_BACK]);
+  hx -= (BUTTON_SIZE + 6);
+  drawButton(BUTTON_CIRCLE, hx, ty);
+  hx -= 12;
+  hx -= pgf_text_width(language_container[NAV_OPEN]);
+  pgf_draw_text(hx, ty, sb_col, language_container[NAV_OPEN]);
+  hx -= (BUTTON_SIZE + 6);
+  drawButton(BUTTON_CROSS, hx, ty);
 
   int si = base_pos + rel_pos;
   if (file_list.length > 0 && si >= 0 && si < file_list.length) {
@@ -243,7 +256,7 @@ void drawScrollBar(int pos, int n) {
 }
 
 void drawShellInfo(const char *path) {
-  int is_img_bg = (vitashell_config.background_anim >= 4);
+  int is_img_bg = (vitashell_config.background_anim >= 7);
   unsigned int t_top = is_img_bg ? COLOR_ALPHA(themeTopbarBg(vitashell_config.theme_preset), 200) : themeTopbarBg(vitashell_config.theme_preset);
   unsigned int t_txt = themeTopbarText(vitashell_config.theme_preset);
   unsigned int t_card = is_img_bg ? COLOR_ALPHA(themeCardBg(vitashell_config.theme_preset), 160) : themeCardBg(vitashell_config.theme_preset);
@@ -274,18 +287,18 @@ void drawShellInfo(const char *path) {
     sx -= STATUS_BAR_SPACE_X;
     if (ftpvita_is_initialized() && ftp_image) {
       sx -= vita2d_texture_get_width(ftp_image);
-      vita2d_draw_texture(ftp_image, sx, 4);
+      vita2d_draw_texture(ftp_image, sx, 7);
       sx -= STATUS_BAR_SPACE_X;
     }
     if (sceKernelGetModel() == SCE_KERNEL_MODEL_VITA) {
       sx -= vita2d_texture_get_width(battery_image);
-      vita2d_draw_texture(battery_image, sx, 5);
+      vita2d_draw_texture(battery_image, sx, 7);
       vita2d_texture *bbi = battery_bar_green_image;
       if (scePowerIsLowBattery() && !scePowerIsBatteryCharging()) bbi = battery_bar_red_image;
       float pct = scePowerGetBatteryLifePercent() / 100.0f;
       float bw = vita2d_texture_get_width(bbi);
-      vita2d_draw_texture_part(bbi, sx+3.0f+(1.0f-pct)*bw, 7.0f, (1.0f-pct)*bw, 0, pct*bw, vita2d_texture_get_height(bbi));
-      if (scePowerIsBatteryCharging()) vita2d_draw_texture(battery_bar_charge_image, sx+3.0f, 7.0f);
+      vita2d_draw_texture_part(bbi, sx+3.0f+(1.0f-pct)*bw, 9.0f, (1.0f-pct)*bw, 0, pct*bw, vita2d_texture_get_height(bbi));
+      if (scePowerIsBatteryCharging()) vita2d_draw_texture(battery_bar_charge_image, sx+3.0f, 9.0f);
     }
   }
 

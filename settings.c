@@ -41,9 +41,9 @@ static int n_settings_entries = 0;
 
 static char *usbdevice_options[4];
 static char *select_button_options[2];
-static char *bg_anim_options[6];
+static char *bg_anim_options[9];
 static char *view_mode_options[3];
-static char *theme_preset_options[6];
+static char *theme_preset_options[7];
 
 static char *language_options[19];
 
@@ -107,10 +107,42 @@ SettingsMenuOption main_settings[] = {
   { VITASHELL_SETTINGS_RESTART_SHELL,   SETTINGS_OPTION_TYPE_CALLBACK, (void *)restartShell, NULL, 0, NULL, 0, NULL },
 };
 
+static void restartShell() {
+  closeSettingsMenu();
+  sceAppMgrLoadExec("app0:eboot.bin", NULL, NULL);
+}
+
+static void rebootDevice() {
+  scePowerRequestColdReset();
+}
+
+static void shutdownDevice() {
+  scePowerRequestStandby();
+}
+
+static void suspendDevice() {
+  scePowerRequestSuspend();
+}
+
+static void confirmReboot(SettingsMenuOption **opt) {
+  closeSettingsMenu();
+  setTouchConfirm(language_container[CONFIRM_REBOOT], rebootDevice, NULL);
+}
+
+static void confirmShutdown(SettingsMenuOption **opt) {
+  closeSettingsMenu();
+  setTouchConfirm(language_container[CONFIRM_POWEROFF], shutdownDevice, NULL);
+}
+
+static void confirmSuspend(SettingsMenuOption **opt) {
+  closeSettingsMenu();
+  setTouchConfirm(language_container[CONFIRM_STANDBY], suspendDevice, NULL);
+}
+
 SettingsMenuOption power_settings[] = {
-  { VITASHELL_SETTINGS_REBOOT,    SETTINGS_OPTION_TYPE_CALLBACK, (void *)rebootDevice, NULL, 0, NULL, 0, NULL },
-  { VITASHELL_SETTINGS_POWEROFF,  SETTINGS_OPTION_TYPE_CALLBACK, (void *)shutdownDevice, NULL, 0, NULL, 0, NULL },
-  { VITASHELL_SETTINGS_STANDBY,   SETTINGS_OPTION_TYPE_CALLBACK, (void *)suspendDevice, NULL, 0, NULL, 0, NULL },
+  { VITASHELL_SETTINGS_REBOOT,    SETTINGS_OPTION_TYPE_CALLBACK, (void *)confirmReboot, NULL, 0, NULL, 0, NULL },
+  { VITASHELL_SETTINGS_POWEROFF,  SETTINGS_OPTION_TYPE_CALLBACK, (void *)confirmShutdown, NULL, 0, NULL, 0, NULL },
+  { VITASHELL_SETTINGS_STANDBY,   SETTINGS_OPTION_TYPE_CALLBACK, (void *)confirmSuspend, NULL, 0, NULL, 0, NULL },
 };
 
 SettingsMenuEntry vitashell_settings_menu_entries[] = {
@@ -121,38 +153,16 @@ SettingsMenuEntry vitashell_settings_menu_entries[] = {
 static SettingsMenu settings_menu;
 
 void loadSettingsConfig() {
-  // Load settings config file
   memset(&vitashell_config, 0, sizeof(VitaShellConfig));
   readConfig("ux0:FMVita/settings.txt", settings_entries, sizeof(settings_entries) / sizeof(ConfigEntry));
 }
 
 void saveSettingsConfig() {
-  // Save settings config file
   writeConfig("ux0:FMVita/settings.txt", settings_entries, sizeof(settings_entries) / sizeof(ConfigEntry));
 
   if (sceKernelGetModel() == SCE_KERNEL_MODEL_VITATV) {
     vitashell_config.select_button = SELECT_BUTTON_MODE_FTP;
   }
-}
-
-static void restartShell() {
-  closeSettingsMenu();
-  sceAppMgrLoadExec("app0:eboot.bin", NULL, NULL);
-}
-
-static void rebootDevice() {
-  closeSettingsMenu();
-  scePowerRequestColdReset();
-}
-
-static void shutdownDevice() {
-  closeSettingsMenu();
-  scePowerRequestStandby();
-}
-
-static void suspendDevice() {
-  closeSettingsMenu();
-  scePowerRequestSuspend();
 }
 
 void initSettingsMenu() {
@@ -188,8 +198,11 @@ static void refreshSettingsLangStrings() {
   bg_anim_options[1] = language_container[BG_ANIM_WAVES];
   bg_anim_options[2] = language_container[BG_ANIM_STARS];
   bg_anim_options[3] = language_container[BG_ANIM_SQUARES];
-  bg_anim_options[4] = language_container[BG_ANIM_GIF];
-  bg_anim_options[5] = language_container[BG_ANIM_PNG];
+  bg_anim_options[4] = language_container[BG_ANIM_SPARK];
+  bg_anim_options[5] = language_container[BG_ANIM_MATRIX];
+  bg_anim_options[6] = language_container[BG_ANIM_RAIN];
+  bg_anim_options[7] = language_container[BG_ANIM_GIF];
+  bg_anim_options[8] = language_container[BG_ANIM_PNG];
 
   view_mode_options[0] = language_container[VIEW_MODE_LIST];
   view_mode_options[1] = language_container[VIEW_MODE_GRID];
@@ -201,6 +214,7 @@ static void refreshSettingsLangStrings() {
   theme_preset_options[3] = language_container[THEME_RED];
   theme_preset_options[4] = language_container[THEME_PURPLE];
   theme_preset_options[5] = language_container[THEME_BROWN];
+  theme_preset_options[6] = language_container[THEME_GRAY];
 }
 
 void openSettingsMenu() {

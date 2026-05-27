@@ -386,7 +386,7 @@ void freeGifBackground() {
 void loadGifBackground() {
   freeGifBackground();
 
-  if (vitashell_config.background_anim != 4)
+  if (vitashell_config.background_anim != 7)
     return;
 
   char path[MAX_PATH_LENGTH];
@@ -481,7 +481,7 @@ void loadPngBackground() {
     vita2d_free_texture(png_bg_texture);
     png_bg_texture = NULL;
   }
-  if (vitashell_config.background_anim != 5) return;
+  if (vitashell_config.background_anim != 8) return;
 
   png_bg_texture = vita2d_load_PNG_file("ux0:FMVita/Background/bg.png");
   if (!png_bg_texture)
@@ -492,7 +492,7 @@ void loadPngBackground() {
 }
 
 void updateGifBackground() {
-  if (vitashell_config.background_anim != 4) return;
+  if (vitashell_config.background_anim != 7) return;
 
   if (!gif_texture) {
     loadGifBackground();
@@ -537,9 +537,9 @@ static void drawImageBackground(vita2d_texture *tex, int tw, int th) {
 void drawGifBackground() {
   updateGifBackground();
 
-  if (vitashell_config.background_anim == 4 && gif_texture) {
+  if (vitashell_config.background_anim == 7 && gif_texture) {
     drawImageBackground(gif_texture, gif_width, gif_height);
-  } else if (vitashell_config.background_anim == 5) {
+  } else if (vitashell_config.background_anim == 8) {
     if (!png_bg_texture) loadPngBackground();
     if (png_bg_texture) {
       int tw = vita2d_texture_get_width(png_bg_texture);

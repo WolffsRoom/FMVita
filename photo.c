@@ -208,6 +208,10 @@ int photoViewer(const char *file, int type, FileList *list, FileListEntry *entry
   const char *fname = strrchr(file, '/');
   if (fname) fname++; else fname = file;
 
+  char current_file[MAX_PATH_LENGTH];
+  strncpy(current_file, file, MAX_PATH_LENGTH - 1);
+  current_file[MAX_PATH_LENGTH - 1] = '\0';
+
   while (1) {
     readPad();
 
@@ -334,6 +338,9 @@ int photoViewer(const char *file, int type, FileList *list, FileListEntry *entry
       int old_base_pos = *base_pos;
       int old_rel_pos = *rel_pos;
       FileListEntry *old_entry = entry;
+      char old_file[MAX_PATH_LENGTH];
+      strncpy(old_file, current_file, MAX_PATH_LENGTH);
+      old_file[MAX_PATH_LENGTH - 1] = '\0';
 
       int previous = pressed_pad[PAD_LEFT];
       while (previous ? entry->previous : entry->next) {
@@ -362,12 +369,25 @@ int photoViewer(const char *file, int type, FileList *list, FileListEntry *entry
           if (type == FILE_TYPE_BMP || type == FILE_TYPE_JPEG || type == FILE_TYPE_PNG || type == FILE_TYPE_GIF) {
             vita2d_wait_rendering_done();
             vita2d_free_texture(tex);
-            
-            tex = loadImage(path, type, buffer);
-            if (!tex) {
-              free(buffer);
-              return VITASHELL_ERROR_NO_MEMORY;
+
+            vita2d_texture *new_tex = loadImage(path, type, buffer);
+            if (!new_tex) {
+              // Restore previous entry and image
+              entry = old_entry;
+              *base_pos = old_base_pos;
+              *rel_pos = old_rel_pos;
+              strncpy(current_file, old_file, MAX_PATH_LENGTH);
+              tex = loadImage(current_file, type, buffer);
+              if (!tex) {
+                free(buffer);
+                return VITASHELL_ERROR_NO_MEMORY;
+              }
+              resetImageInfo(tex, &width, &height, &x, &y, &rad, &zoom, &mode, &time);
+              available = 0;
+              break;
             }
+            tex = new_tex;
+            strncpy(current_file, path, MAX_PATH_LENGTH);
 
             // Reset image
             resetImageInfo(tex, &width, &height, &x, &y, &rad, &zoom, &mode, &time);
@@ -381,6 +401,7 @@ int photoViewer(const char *file, int type, FileList *list, FileListEntry *entry
         *base_pos = old_base_pos;
         *rel_pos = old_rel_pos;
         entry = old_entry;
+        strncpy(current_file, old_file, MAX_PATH_LENGTH);
       }
     }
 
@@ -481,7 +502,7 @@ int photoViewer(const char *file, int type, FileList *list, FileListEntry *entry
     static float photo_wave_time = 0.0f;
     photo_wave_time += 0.018f;
     
-    if (vitashell_config.background_anim >= 4) {
+    if (vitashell_config.background_anim >= 7) {
       drawGifBackground();
     } else {
       drawGifBackground();
@@ -560,6 +581,75 @@ int photoViewer(const char *file, int type, FileList *list, FileListEntry *entry
           vita2d_draw_rectangle(x, y, size, size, RGBA8(100, 180, 255, alpha));
           vita2d_draw_rectangle(x + 2, y + 2, size - 4, size - 4, RGBA8(150, 220, 255, alpha / 2));
         }
+      } else if (vitashell_config.background_anim == 4) {
+        // Spark — faiscas brancas ascendentes
+        for (int i = 0; i < 40; i++) {
+          float speed = 0.6f + (i % 7) * 0.2f;
+          float base_x = (i * 53 + 19) % SCREEN_WIDTH;
+          float base_y = (i * 71 + 37) % SCREEN_HEIGHT;
+          float sz = 3.0f + (i % 5) * 2.5f;
+          float x = base_x + sinf(photo_wave_time * speed * 0.7f + i * 2.1f) * 20.0f;
+          float y = base_y - (photo_wave_time * 70.0f * speed);
+          while (y < -sz) y += SCREEN_HEIGHT + sz * 2;
+          int alpha = 40 + (int)((sinf(photo_wave_time * 3.0f + i * 1.7f) + 1.0f) * 60.0f);
+          unsigned int c = RGBA8(220 + (i % 3) * 15, 200 + (i % 4) * 10, 180 + (i % 5) * 8, alpha);
+          vita2d_draw_fill_circle(x, y, sz, c);
+        }
+        // Brilho extra
+        for (int i = 0; i < 15; i++) {
+          float x = (i * 97 + 11) % SCREEN_WIDTH;
+          float y = (i * 83 + 53) % SCREEN_HEIGHT;
+          float sz = 10.0f + (i % 3) * 5.0f;
+          int a = 10 + (int)((sinf(photo_wave_time * 1.5f + i * 3.3f) + 1.0f) * 30.0f);
+          vita2d_draw_fill_circle(x, y, sz, RGBA8(255, 255, 200, a));
+        }
+      } else if (vitashell_config.background_anim == 5) {
+        // Matrix — caracteres katakana caindo em estilo Matrix
+        static const char *matrix_chars[] = {
+          "\xe3\x82\xbf", "\xe3\x83\x8f", "\xe3\x83\x9f", "\xe3\x83\xa4",
+          "\xe3\x83\xa9", "\xe3\x83\xaf", "\xe3\x83\xb3", "\xe3\x82\xa6",
+          "\xe3\x82\xa8", "\xe3\x83\xa2", "\xe3\x83\xab", "\xe3\x83\x87",
+          "\xe3\x82\xb1", "\xe3\x83\x8b", "\xe3\x83\x81", "\xe3\x83\x84",
+          "\xe3\x83\x8a", "\xe3\x83\x8c", "\xe3\x83\x8d", "\xe3\x83\x8e",
+          "\xe3\x83\x8f", "\xe3\x83\x92", "\xe3\x83\x95", "\xe3\x83\x98",
+          "\xe3\x83\x9b", "\xe3\x83\x9e", "\xe3\x83\x9f", "\xe3\x83\xa0",
+          "\xe3\x83\xa1", "\xe3\x83\xa2"
+        };
+        int n_chars = sizeof(matrix_chars) / sizeof(matrix_chars[0]);
+        for (int i = 0; i < 45; i++) {
+          float speed = 0.5f + (i % 8) * 0.25f;
+          float base_x = (i * 22 + 5) % SCREEN_WIDTH;
+          float base_y = (i * 67 + 13) % SCREEN_HEIGHT;
+          float x = base_x;
+          float y = base_y + (photo_wave_time * 50.0f * speed);
+          while (y > SCREEN_HEIGHT + 30) y -= SCREEN_HEIGHT + 60;
+          int head_idx = i % n_chars;
+          unsigned int head_color = RGBA8(180, 255, 180, 200);
+          float sz = 1.0f;
+          vita2d_pgf_draw_text(font, x - 5, y - 12, head_color, sz, matrix_chars[head_idx]);
+          for (int j = 1; j < 6; j++) {
+            int ci = (head_idx + j) % n_chars;
+            int a = 60 - j * 10;
+            if (a < 10) a = 10;
+            vita2d_pgf_draw_text(font, x - 5, y - 12 - j * 12, RGBA8(40, 180, 80, a), sz, matrix_chars[ci]);
+          }
+        }
+      } else if (vitashell_config.background_anim == 6) {
+        // Rain (chuva) — gotas azuis caindo na diagonal
+        for (int i = 0; i < 60; i++) {
+          float speed = 1.0f + (i % 5) * 0.3f;
+          float base_x = (i * 31 + 7) % SCREEN_WIDTH;
+          float base_y = (i * 59 + 23) % SCREEN_HEIGHT;
+          float drift = sinf(photo_wave_time * 0.3f + i * 1.1f) * 30.0f;
+          float x = base_x + drift + (photo_wave_time * 15.0f * speed);
+          float y = base_y + (photo_wave_time * 80.0f * speed);
+          while (x > SCREEN_WIDTH + 20) x -= SCREEN_WIDTH + 40;
+          while (y > SCREEN_HEIGHT + 20) y -= SCREEN_HEIGHT + 40;
+          int alpha = 20 + (int)((sinf(photo_wave_time * 2.5f + i * 2.3f) + 1.0f) * 40.0f);
+          float len = 10.0f + (i % 6) * 3.0f;
+          vita2d_draw_line(x, y, x - 4, y + len, RGBA8(100, 200, 255, alpha));
+          vita2d_draw_fill_circle(x, y, 2.5f, RGBA8(180, 230, 255, alpha + 30));
+        }
       }
     }
 
@@ -576,9 +666,9 @@ int photoViewer(const char *file, int type, FileList *list, FileListEntry *entry
     }
     vita2d_draw_rectangle(0, 0, SCREEN_WIDTH, 44, themeTopbarBg(vitashell_config.theme_preset));
     vita2d_draw_rectangle(0, 44, SCREEN_WIDTH, 1, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 18));
-    pgf_draw_textf(SHELL_MARGIN_X, 10, themeTopbarText(vitashell_config.theme_preset), "%s  |  %s", fname, size_str);
+    pgf_draw_textf(SHELL_MARGIN_X, 10, themeTopbarText(vitashell_config.theme_preset), "%s  |  %s  |  Zoom: %.0f%%", fname, size_str, zoom * 100.0f);
 
-    // Toolbar buttons (bottom)
+    // Toolbar buttons (bottom) — estilo do menu superior
     int bottom_bar_y = SCREEN_HEIGHT - 50;
     vita2d_draw_rectangle(0, bottom_bar_y - 1, SCREEN_WIDTH, 1, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 18));
     vita2d_draw_rectangle(0, bottom_bar_y, SCREEN_WIDTH, 50, themeTopbarBg(vitashell_config.theme_preset));
@@ -586,10 +676,9 @@ int photoViewer(const char *file, int type, FileList *list, FileListEntry *entry
     int btn_w = 110, btn_gap = 8;
     int total_btn_w = 3 * btn_w + 2 * btn_gap;
     int btn_start_x = (SCREEN_WIDTH - total_btn_w) / 2;
-    int btn_colors[4] = {
-      themeButtonDefault(vitashell_config.theme_preset),
-      themeButtonDanger(vitashell_config.theme_preset),
+    unsigned int p_btn_colors[3] = {
       themeButtonAccent(vitashell_config.theme_preset),
+      themeButtonDanger(vitashell_config.theme_preset),
       themeButtonSuccess(vitashell_config.theme_preset),
     };
     const char *btn_labels[3] = {
@@ -599,8 +688,10 @@ int photoViewer(const char *file, int type, FileList *list, FileListEntry *entry
     };
     for (int b = 0; b < 3; b++) {
       int bx = btn_start_x + b * (btn_w + btn_gap);
-      vita2d_draw_rectangle(bx, btn_y, btn_w, btn_h, btn_colors[b]);
-      vita2d_draw_rectangle(bx, btn_y, btn_w, 2, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 30));
+      unsigned int t_card = COLOR_ALPHA(themeCardBg(vitashell_config.theme_preset), 160);
+      vita2d_draw_rectangle(bx, btn_y, btn_w, btn_h, t_card);
+      vita2d_draw_rectangle(bx, btn_y, btn_w, 2, p_btn_colors[b]);
+      vita2d_draw_rectangle(bx, btn_y+btn_h-1, btn_w, 1, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 8));
       photo_center_text(bx + btn_w / 2.0f, btn_y + 12, themeTopbarText(vitashell_config.theme_preset), btn_labels[b]);
     }
 
@@ -613,9 +704,7 @@ int photoViewer(const char *file, int type, FileList *list, FileListEntry *entry
       pgf_draw_text(SHELL_MARGIN_X, SCREEN_HEIGHT - 3.0f * SHELL_MARGIN_Y, COLOR_ALPHA(themeAccentColor(vitashell_config.theme_preset), 200), language_container[MIRRORED_LABEL]);
     }
 
-    // Zoom text
-    if ((sceKernelGetProcessTimeWide() - time) < ZOOM_TEXT_TIME)
-      pgf_draw_textf(SHELL_MARGIN_X + 150, SCREEN_HEIGHT - 3.0f * SHELL_MARGIN_Y, PHOTO_ZOOM_COLOR, "%.0f%%", zoom * 100.0f);
+
 
     // End drawing
     endDrawing();

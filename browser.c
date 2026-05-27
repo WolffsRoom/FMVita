@@ -476,15 +476,15 @@ int refreshFileList() {
 
       if (dir_level > 1) {
         char gparent_path[MAX_PATH_LENGTH];
-        snprintf(gparent_path, MAX_PATH_LENGTH, "%s", pp_clean);
+        snprintf(gparent_path, MAX_PATH_LENGTH, "%s", parent_path);
         len = strlen(gparent_path);
         if (len > 0 && gparent_path[len-1] == '/') gparent_path[len-1] = '\0';
-        // Always add trailing slash for device-root paths to find parent
-        if (strchr(gparent_path, ':') && !strchr(gparent_path, '/'))
-          strcat(gparent_path, "/");
-        slash = strrchr(gparent_path, '/');
-        if (slash) {
-          slash[1] = '\0';
+        char *slash2 = strrchr(gparent_path, '/');
+        if (slash2) {
+          slash2[1] = '\0';
+        } else {
+          char *colon2 = strchr(gparent_path, ':');
+          if (colon2) colon2[1] = '\0';
         }
         // If gparent_path would be same as parent, use HOME_PATH for grandparent
         char gc_clean[MAX_PATH_LENGTH];
@@ -1743,7 +1743,7 @@ FONT_Y_SPACE) - (MAX_ENTRIES * FONT_Y_SPACE);
     startDrawing(NULL);
 
     // Background / GIF / Animation
-    if (vitashell_config.background_anim >= 4) {
+    if (vitashell_config.background_anim >= 7) {
       drawGifBackground();
     } else {
       drawGifBackground();
@@ -1822,6 +1822,75 @@ FONT_Y_SPACE) - (MAX_ENTRIES * FONT_Y_SPACE);
           int alpha = 10 + (int)((sinf(wave_time * 2.0f + i) + 1.0f) * 20.0f);
           vita2d_draw_rectangle(x, y, size, size, RGBA8(100, 180, 255, alpha));
           vita2d_draw_rectangle(x + 2, y + 2, size - 4, size - 4, RGBA8(150, 220, 255, alpha / 2));
+        }
+      } else if (vitashell_config.background_anim == 4) {
+        // Spark — faiscas brancas ascendentes
+        for (int i = 0; i < 40; i++) {
+          float speed = 0.6f + (i % 7) * 0.2f;
+          float base_x = (i * 53 + 19) % SCREEN_WIDTH;
+          float base_y = (i * 71 + 37) % SCREEN_HEIGHT;
+          float sz = 3.0f + (i % 5) * 2.5f;
+          float x = base_x + sinf(wave_time * speed * 0.7f + i * 2.1f) * 20.0f;
+          float y = base_y - (wave_time * 70.0f * speed);
+          while (y < -sz) y += SCREEN_HEIGHT + sz * 2;
+          int alpha = 40 + (int)((sinf(wave_time * 3.0f + i * 1.7f) + 1.0f) * 60.0f);
+          unsigned int c = RGBA8(220 + (i % 3) * 15, 200 + (i % 4) * 10, 180 + (i % 5) * 8, alpha);
+          vita2d_draw_fill_circle(x, y, sz, c);
+        }
+        // Brilho extra
+        for (int i = 0; i < 15; i++) {
+          float x = (i * 97 + 11) % SCREEN_WIDTH;
+          float y = (i * 83 + 53) % SCREEN_HEIGHT;
+          float sz = 10.0f + (i % 3) * 5.0f;
+          int a = 10 + (int)((sinf(wave_time * 1.5f + i * 3.3f) + 1.0f) * 30.0f);
+          vita2d_draw_fill_circle(x, y, sz, RGBA8(255, 255, 200, a));
+        }
+      } else if (vitashell_config.background_anim == 5) {
+        // Matrix — caracteres katakana caindo em estilo Matrix
+        static const char *matrix_chars[] = {
+          "\xe3\x82\xbf", "\xe3\x83\x8f", "\xe3\x83\x9f", "\xe3\x83\xa4",
+          "\xe3\x83\xa9", "\xe3\x83\xaf", "\xe3\x83\xb3", "\xe3\x82\xa6",
+          "\xe3\x82\xa8", "\xe3\x83\xa2", "\xe3\x83\xab", "\xe3\x83\x87",
+          "\xe3\x82\xb1", "\xe3\x83\x8b", "\xe3\x83\x81", "\xe3\x83\x84",
+          "\xe3\x83\x8a", "\xe3\x83\x8c", "\xe3\x83\x8d", "\xe3\x83\x8e",
+          "\xe3\x83\x8f", "\xe3\x83\x92", "\xe3\x83\x95", "\xe3\x83\x98",
+          "\xe3\x83\x9b", "\xe3\x83\x9e", "\xe3\x83\x9f", "\xe3\x83\xa0",
+          "\xe3\x83\xa1", "\xe3\x83\xa2"
+        };
+        int n_chars = sizeof(matrix_chars) / sizeof(matrix_chars[0]);
+        for (int i = 0; i < 45; i++) {
+          float speed = 0.5f + (i % 8) * 0.25f;
+          float base_x = (i * 22 + 5) % SCREEN_WIDTH;
+          float base_y = (i * 67 + 13) % SCREEN_HEIGHT;
+          float x = base_x;
+          float y = base_y + (wave_time * 50.0f * speed);
+          while (y > SCREEN_HEIGHT + 30) y -= SCREEN_HEIGHT + 60;
+          int head_idx = i % n_chars;
+          unsigned int head_color = RGBA8(180, 255, 180, 200);
+          float sz = 1.0f;
+          vita2d_pgf_draw_text(font, x - 5, y - 12, head_color, sz, matrix_chars[head_idx]);
+          for (int j = 1; j < 6; j++) {
+            int ci = (head_idx + j) % n_chars;
+            int a = 60 - j * 10;
+            if (a < 10) a = 10;
+            vita2d_pgf_draw_text(font, x - 5, y - 12 - j * 12, RGBA8(40, 180, 80, a), sz, matrix_chars[ci]);
+          }
+        }
+      } else if (vitashell_config.background_anim == 6) {
+        // Rain (chuva) — gotas azuis caindo na diagonal
+        for (int i = 0; i < 60; i++) {
+          float speed = 1.0f + (i % 5) * 0.3f;
+          float base_x = (i * 31 + 7) % SCREEN_WIDTH;
+          float base_y = (i * 59 + 23) % SCREEN_HEIGHT;
+          float drift = sinf(wave_time * 0.3f + i * 1.1f) * 30.0f;
+          float x = base_x + drift + (wave_time * 15.0f * speed);
+          float y = base_y + (wave_time * 80.0f * speed);
+          while (x > SCREEN_WIDTH + 20) x -= SCREEN_WIDTH + 40;
+          while (y > SCREEN_HEIGHT + 20) y -= SCREEN_HEIGHT + 40;
+          int alpha = 20 + (int)((sinf(wave_time * 2.5f + i * 2.3f) + 1.0f) * 40.0f);
+          float len = 10.0f + (i % 6) * 3.0f;
+          vita2d_draw_line(x, y, x - 4, y + len, RGBA8(100, 200, 255, alpha));
+          vita2d_draw_fill_circle(x, y, 2.5f, RGBA8(180, 230, 255, alpha + 30));
         }
       }
     }
@@ -2013,7 +2082,8 @@ FONT_Y_SPACE) - (MAX_ENTRIES * FONT_Y_SPACE);
 
         // Subtle row background (alternating)
         if (vitashell_config.view_mode != 1 && (i % 2) == 0) {
-          unsigned int list_bg = (vitashell_config.background_anim >= 4) ? COLOR_ALPHA(themeListBg(vitashell_config.theme_preset), 100) : themeListBg(vitashell_config.theme_preset);
+          unsigned int list_bg = (vitashell_config.background_anim >= 7) ? 
+COLOR_ALPHA(themeListBg(vitashell_config.theme_preset), 100) : themeListBg(vitashell_config.theme_preset);
           vita2d_draw_rectangle(cur_margin_x - 10, y, list_width, FONT_Y_SPACE, list_bg);
         }
 
@@ -2242,14 +2312,20 @@ FONT_Y_SPACE) - (MAX_ENTRIES * FONT_Y_SPACE);
       int btn_rx = SCREEN_WIDTH - 20 - btn_size;
       int btn_plus_y = SCREEN_HEIGHT - STATUSBAR_H - 12 - btn_size;
       int btn_bmk_y = btn_plus_y - btn_size - btn_gap;
-      // Floating + button
-      vita2d_draw_rectangle(btn_rx, btn_plus_y, btn_size, btn_size, RGBA8(50, 140, 220, 220));
-      vita2d_draw_rectangle(btn_rx, btn_plus_y, btn_size, 2, RGBA8(255, 255, 255, 30));
-      pgf_draw_text(btn_rx + (btn_size - pgf_text_width("+")) / 2.0f, btn_plus_y + 13, RGBA8(255, 255, 255, 255), "+");
-      // Floating bookmark button
-      vita2d_draw_rectangle(btn_rx, btn_bmk_y, btn_size, btn_size, RGBA8(60, 65, 80, 220));
-      vita2d_draw_rectangle(btn_rx, btn_bmk_y, btn_size, 2, RGBA8(255, 255, 255, 20));
-      pgf_draw_text(btn_rx + (btn_size - pgf_text_width("*")) / 2.0f, btn_bmk_y + 13, RGBA8(200, 205, 220, 255), "*");
+      // Floating + button (toolbar card style)
+      unsigned int tb_card = COLOR_ALPHA(themeCardBg(vitashell_config.theme_preset), 200);
+      unsigned int tb_text = themeTopbarText(vitashell_config.theme_preset);
+      unsigned int tb_acc = themeAccentColor(vitashell_config.theme_preset);
+      vita2d_draw_rectangle(btn_rx, btn_plus_y, btn_size, btn_size, tb_card);
+      vita2d_draw_rectangle(btn_rx, btn_plus_y, btn_size, 2, tb_acc);
+      vita2d_draw_rectangle(btn_rx, btn_plus_y+btn_size-1, btn_size, 1, COLOR_ALPHA(tb_text, 10));
+      pgf_draw_text(btn_rx + (btn_size - pgf_text_width("+")) / 2.0f, btn_plus_y + 12, tb_text, "+");
+      // Floating bookmark button (toolbar card style)
+      unsigned int bmk_col = themeButtonDefault(vitashell_config.theme_preset);
+      vita2d_draw_rectangle(btn_rx, btn_bmk_y, btn_size, btn_size, tb_card);
+      vita2d_draw_rectangle(btn_rx, btn_bmk_y, btn_size, 2, bmk_col);
+      vita2d_draw_rectangle(btn_rx, btn_bmk_y+btn_size-1, btn_size, 1, COLOR_ALPHA(tb_text, 10));
+      pgf_draw_text(btn_rx + (btn_size - pgf_text_width("*")) / 2.0f, btn_bmk_y + 12, tb_text, "*");
     }
 
     // Draw

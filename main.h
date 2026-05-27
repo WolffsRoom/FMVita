@@ -103,7 +103,7 @@ void drawShellInfo(const char *path);
 // Main
 #define SHELL_MARGIN_X 20.0f
 #define SHELL_MARGIN_Y 18.0f
-#define HEADER_H 26.0f
+#define HEADER_H 30.0f
 #define STATUSBAR_H 34.0f
 
 #define PATH_Y (SHELL_MARGIN_Y + 1.0f * FONT_Y_SPACE)
@@ -318,6 +318,7 @@ void drawFtpTouchDialog();
 #define THEME_PRESET_RED    3
 #define THEME_PRESET_PURPLE 4
 #define THEME_PRESET_BROWN  5
+#define THEME_PRESET_GRAY   6
 
 static inline unsigned int themeTopbarBg(int preset) {
   switch (preset) {
@@ -326,12 +327,14 @@ static inline unsigned int themeTopbarBg(int preset) {
     case THEME_PRESET_RED:   return RGBA8(50, 14, 18, 245);
     case THEME_PRESET_PURPLE:return RGBA8(28, 12, 48, 245);
     case THEME_PRESET_BROWN: return RGBA8(40, 26, 14, 245);
+    case THEME_PRESET_GRAY:  return RGBA8(45, 45, 45, 245);
     default:                 return RGBA8(14, 18, 28, 245);
   }
 }
 static inline unsigned int themeTopbarText(int preset) {
   switch (preset) {
     case THEME_PRESET_LIGHT: return RGBA8(25, 30, 45, 255);
+    case THEME_PRESET_GRAY:  return RGBA8(220, 220, 220, 255);
     default:                 return RGBA8(215, 218, 228, 255);
   }
 }
@@ -342,6 +345,7 @@ static inline unsigned int themeBgColor(int preset) {
     case THEME_PRESET_RED:   return RGBA8(32, 12, 14, 255);
     case THEME_PRESET_PURPLE:return RGBA8(18, 10, 28, 255);
     case THEME_PRESET_BROWN: return RGBA8(22, 16, 8, 255);
+    case THEME_PRESET_GRAY:  return RGBA8(20, 20, 20, 255);
     default:                 return RGBA8(8, 12, 18, 255);
   }
 }
@@ -352,6 +356,7 @@ static inline unsigned int themeListBg(int preset) {
     case THEME_PRESET_RED:   return RGBA8(40, 18, 20, 255);
     case THEME_PRESET_PURPLE:return RGBA8(22, 14, 34, 255);
     case THEME_PRESET_BROWN: return RGBA8(30, 22, 12, 255);
+    case THEME_PRESET_GRAY:  return RGBA8(30, 30, 30, 255);
     default:                 return RGBA8(12, 16, 24, 255);
   }
 }
@@ -362,12 +367,14 @@ static inline unsigned int themeCardBg(int preset) {
     case THEME_PRESET_RED:   return RGBA8(40, 18, 20, 220);
     case THEME_PRESET_PURPLE:return RGBA8(22, 14, 38, 220);
     case THEME_PRESET_BROWN: return RGBA8(30, 22, 12, 220);
+    case THEME_PRESET_GRAY:  return RGBA8(25, 25, 25, 220);
     default:                 return RGBA8(10, 14, 22, 220);
   }
 }
 static inline unsigned int themeButtonDefault(int preset) {
   switch (preset) {
     case THEME_PRESET_LIGHT: return RGBA8(160, 165, 175, 220);
+    case THEME_PRESET_GRAY:  return RGBA8(80, 80, 80, 220);
     default:                 return RGBA8(100, 108, 128, 220);
   }
 }
@@ -377,30 +384,35 @@ static inline unsigned int themeButtonAccent(int preset) {
     case THEME_PRESET_RED:   return RGBA8(210, 48, 48, 220);
     case THEME_PRESET_PURPLE:return RGBA8(130, 45, 215, 220);
     case THEME_PRESET_BROWN: return RGBA8(155, 105, 38, 220);
+    case THEME_PRESET_GRAY:  return RGBA8(120, 120, 120, 220);
     default:                 return RGBA8(35, 90, 210, 220);
   }
 }
 static inline unsigned int themeButtonSuccess(int preset) {
   switch (preset) {
     case THEME_PRESET_LIGHT: return RGBA8(55, 155, 95, 220);
+    case THEME_PRESET_GRAY:  return RGBA8(100, 150, 100, 220);
     default:                 return RGBA8(45, 175, 105, 220);
   }
 }
 static inline unsigned int themeButtonDanger(int preset) {
   switch (preset) {
     case THEME_PRESET_LIGHT: return RGBA8(195, 55, 55, 220);
+    case THEME_PRESET_GRAY:  return RGBA8(150, 80, 80, 220);
     default:                 return RGBA8(210, 65, 65, 220);
   }
 }
 static inline unsigned int themeTextColor(int preset) {
   switch (preset) {
     case THEME_PRESET_LIGHT: return RGBA8(25, 30, 45, 255);
+    case THEME_PRESET_GRAY:  return RGBA8(210, 210, 210, 255);
     default:                 return RGBA8(220, 225, 235, 255);
   }
 }
 static inline unsigned int themeTextDim(int preset) {
   switch (preset) {
     case THEME_PRESET_LIGHT: return RGBA8(80, 85, 100, 255);
+    case THEME_PRESET_GRAY:  return RGBA8(140, 140, 140, 255);
     default:                 return RGBA8(160, 170, 190, 255);
   }
 }
@@ -411,6 +423,7 @@ static inline unsigned int themeFolderColor(int preset) {
     case THEME_PRESET_RED:   return RGBA8(255, 110, 90, 255);
     case THEME_PRESET_PURPLE:return RGBA8(180, 100, 255, 255);
     case THEME_PRESET_BROWN: return RGBA8(200, 160, 80, 255);
+    case THEME_PRESET_GRAY:  return RGBA8(180, 180, 180, 255);
     default:                 return RGBA8(60, 180, 240, 255);
   }
 }
@@ -421,24 +434,28 @@ static inline unsigned int themeAccentColor(int preset) {
     case THEME_PRESET_RED:   return RGBA8(210, 60, 60, 255);
     case THEME_PRESET_PURPLE:return RGBA8(140, 60, 220, 255);
     case THEME_PRESET_BROWN: return RGBA8(170, 120, 40, 255);
+    case THEME_PRESET_GRAY:  return RGBA8(160, 160, 160, 255);
     default:                 return RGBA8(60, 150, 255, 255);
   }
 }
 static inline unsigned int themeDialogBg(int preset) {
   switch (preset) {
     case THEME_PRESET_LIGHT: return RGBA8(230, 228, 222, 250);
+    case THEME_PRESET_GRAY:  return RGBA8(35, 35, 35, 248);
     default:                 return RGBA8(15, 20, 30, 248);
   }
 }
 static inline unsigned int themeSelectionBg(int preset) {
   switch (preset) {
     case THEME_PRESET_LIGHT: return RGBA8(42, 88, 175, 40);
+    case THEME_PRESET_GRAY:  return RGBA8(100, 100, 100, 60);
     default:                 return RGBA8(40, 100, 220, 60);
   }
 }
 static inline unsigned int themeSelectionLine(int preset) {
   switch (preset) {
     case THEME_PRESET_LIGHT: return RGBA8(42, 88, 175, 180);
+    case THEME_PRESET_GRAY:  return RGBA8(150, 150, 150, 180);
     default:                 return RGBA8(60, 150, 255, 180);
   }
 }

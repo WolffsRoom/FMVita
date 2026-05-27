@@ -206,7 +206,11 @@ BG_ANIM_WAVES                        = "Waves"
 
 BG_ANIM_STARS                        = "Stars"
 
-BG_ANIM_SQUARES                      = "Squares"
+BG_ANIM_SQUARES                        = "Squares"
+BG_ANIM_SPARK                          = "Spark"
+BG_ANIM_MATRIX                         = "Matrix"
+
+BG_ANIM_RAIN                           = "Rain"
 
 BG_ANIM_GIF                          = "GIF"
 
@@ -223,6 +227,7 @@ THEME_BLUE                          = "Blue"
 THEME_RED                           = "Red"
 THEME_PURPLE                        = "Purple"
 THEME_BROWN                         = "Brown"
+THEME_GRAY                          = "Theme Grayscale"
 
 # USB strings
 USB_CONNECTED                        = "USB connected"
@@ -268,3 +273,10 @@ UPDATE_QUESTION                      = "FileManager %s is now available.\\Do you
 ARCHIVE_NAME                         = "Archive name"
 COMPRESSION_LEVEL                    = "Compression level (0-9)"
 ENTER_PASSWORD                       = "Enter password"
+ITEMS                                = "itens"
+NAV_BACK                             = "Voltar"
+NAV_OPEN                             = "Abrir"
+CLOSE_LABEL                          = "Sair"
+CONFIRM_REBOOT                       = "Deseja reiniciar?"
+CONFIRM_POWEROFF                     = "Deseja desligar?"
+CONFIRM_STANDBY                      = "Deseja colocar em standby?"
