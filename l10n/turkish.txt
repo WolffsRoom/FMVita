@@ -176,7 +176,8 @@ VITASHELL_SETTINGS_USB_GAME_CARD     = "Oyun Karti"
 VITASHELL_SETTINGS_USB_SD2VITA       = "sd2vita"
 VITASHELL_SETTINGS_USB_PSVSD         = "psvsd"
 VITASHELL_SETTINGS_SELECT_BUTTON_USB = "USB"
-VITASHELL_SETTINGS_SELECT_BUTTON_FTP = "FTP"
+VITASHELL_SETTINGS_SELECT_BUTTON_FTP = "FTP"
+VITASHELL_SETTINGS_SELECT_BUTTON_QR = "QR"
 
 # USB strings
 USB_CONNECTED                        = "USB baglandi"
@@ -222,3 +223,6 @@ UPDATE_QUESTION                      = "VitaShell %s yeni surumune guncellemek i
 ARCHIVE_NAME                         = "Arsiv adi"
 COMPRESSION_LEVEL                    = "Arsivleme seviyesi seciniz (0-9)"
 ENTER_PASSWORD                       = "Sifrenizi giriniz"
+PROTECTED_PATH                       = "Error: System folder is protected."
+RUN_APP_AFTER_INSTALL                = "Installation completed. Start the app/game now?"
+LAUNCH_APP_GAME                      = "Launch app/game"

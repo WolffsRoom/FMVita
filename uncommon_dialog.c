@@ -39,6 +39,13 @@ typedef struct {
   float height;
   float scale;
   int progress;
+
+  int touch_active;
+  float touch_x, touch_y;
+  int touch_button_count;
+  float touch_btn_x0, touch_btn_y0, touch_btn_x1, touch_btn_y1;
+  float touch_btn2_x0, touch_btn2_y0, touch_btn2_x1, touch_btn2_y1;
+  int touch_btn1_result, touch_btn2_result;
 } UncommonDialog;
 
 static UncommonDialog uncommon_dialog;
@@ -176,8 +183,70 @@ int sceMsgDialogInit(const SceMsgDialogParam *param) {
   return 0;
 }
 
+static int hitTestButton(float tx, float ty, float x0, float y0, float x1, float y1) {
+  return (tx >= x0 && tx < x1 && ty >= y0 && ty < y1);
+}
+
+void checkDialogTouch() {
+  if (uncommon_dialog.status != SCE_COMMON_DIALOG_STATUS_RUNNING ||
+      uncommon_dialog.dialog_status != UNCOMMON_DIALOG_OPENED)
+    return;
+
+  if (touch.reportNum > 0) {
+    float tx = (touch.report[0].x * 960.0f) / 1920.0f;
+    float ty = (touch.report[0].y * 544.0f) / 1088.0f;
+    if (!uncommon_dialog.touch_active) {
+      uncommon_dialog.touch_active = 1;
+      uncommon_dialog.touch_x = tx;
+      uncommon_dialog.touch_y = ty;
+    }
+  } else if (uncommon_dialog.touch_active) {
+    uncommon_dialog.touch_active = 0;
+    float tx = uncommon_dialog.touch_x;
+    float ty = uncommon_dialog.touch_y;
+
+    int hit_first = 0, hit_second = 0;
+    if (uncommon_dialog.touch_button_count >= 1 &&
+        hitTestButton(tx, ty,
+          uncommon_dialog.touch_btn_x0, uncommon_dialog.touch_btn_y0,
+          uncommon_dialog.touch_btn_x1, uncommon_dialog.touch_btn_y1)) {
+      hit_first = 1;
+    } else if (uncommon_dialog.touch_button_count >= 2 &&
+        hitTestButton(tx, ty,
+          uncommon_dialog.touch_btn2_x0, uncommon_dialog.touch_btn2_y0,
+          uncommon_dialog.touch_btn2_x1, uncommon_dialog.touch_btn2_y1)) {
+      hit_second = 1;
+    }
+
+    if (hit_first || hit_second) {
+      switch (uncommon_dialog.buttonType) {
+        case SCE_MSG_DIALOG_BUTTON_TYPE_OK:
+          pressed_pad[PAD_ENTER] = 1;
+          break;
+        case SCE_MSG_DIALOG_BUTTON_TYPE_YESNO:
+          if (hit_first)
+            pressed_pad[PAD_ENTER] = 1;
+          else
+            pressed_pad[PAD_CANCEL] = 1;
+          break;
+        case SCE_MSG_DIALOG_BUTTON_TYPE_OK_CANCEL:
+          if (hit_first)
+            pressed_pad[PAD_ENTER] = 1;
+          else
+            pressed_pad[PAD_CANCEL] = 1;
+          break;
+        case SCE_MSG_DIALOG_BUTTON_TYPE_CANCEL:
+          pressed_pad[PAD_CANCEL] = 1;
+          break;
+      }
+    }
+  }
+}
+
 SceCommonDialogStatus sceMsgDialogGetStatus(void) {
-  if (uncommon_dialog.status == SCE_COMMON_DIALOG_STATUS_RUNNING) {
+  if (uncommon_dialog.status == SCE_COMMON_DIALOG_STATUS_RUNNING &&
+      uncommon_dialog.dialog_status == UNCOMMON_DIALOG_OPENED) {
+
     switch (uncommon_dialog.buttonType) {
       case SCE_MSG_DIALOG_BUTTON_TYPE_OK:
       {
@@ -397,19 +466,40 @@ int drawUncommonDialog() {
       string_y += CAM_HEIGHT;
     }
 
+    uncommon_dialog.touch_button_count = 0;
+
     if (has_first || has_second) {
       float total_w = 0;
-      if (has_first) total_w += BUTTON_SIZE + btn_label_gap + pgf_text_width(btn_string1);
-      if (has_second) total_w += btn_gap + BUTTON_SIZE + btn_label_gap + pgf_text_width(btn_string2);
+      float first_w = 0, second_w = 0;
+      if (has_first) first_w = BUTTON_SIZE + btn_label_gap + pgf_text_width(btn_string1);
+      if (has_second) second_w = BUTTON_SIZE + btn_label_gap + pgf_text_width(btn_string2);
+      total_w = first_w + (has_second ? btn_gap + second_w : 0);
       float bx = (SCREEN_WIDTH - total_w) / 2.0f;
       float by = string_y + FONT_Y_SPACE;
+      float bh = FONT_Y_SPACE;
 
       if (has_first) {
+        float bw = first_w + 10;
+        uncommon_dialog.touch_btn_x0 = bx - 5;
+        uncommon_dialog.touch_btn_y0 = by - 4;
+        uncommon_dialog.touch_btn_x1 = bx + bw;
+        uncommon_dialog.touch_btn_y1 = by + bh;
+        uncommon_dialog.touch_btn1_result = (uncommon_dialog.buttonType == SCE_MSG_DIALOG_BUTTON_TYPE_OK) ? SCE_MSG_DIALOG_BUTTON_ID_OK : SCE_MSG_DIALOG_BUTTON_ID_YES;
+        uncommon_dialog.touch_button_count = 1;
+
         drawButton(first_btn, bx, by + 1);
         pgf_draw_text(bx + BUTTON_SIZE + btn_label_gap, by, DIALOG_COLOR, btn_string1);
-        bx += BUTTON_SIZE + btn_label_gap + pgf_text_width(btn_string1) + btn_gap;
+        bx += first_w + btn_gap;
       }
       if (has_second) {
+        float bw = second_w + 10;
+        uncommon_dialog.touch_btn2_x0 = bx - 5;
+        uncommon_dialog.touch_btn2_y0 = by - 4;
+        uncommon_dialog.touch_btn2_x1 = bx + bw;
+        uncommon_dialog.touch_btn2_y1 = by + bh;
+        uncommon_dialog.touch_btn2_result = (uncommon_dialog.buttonType == SCE_MSG_DIALOG_BUTTON_TYPE_YESNO) ? SCE_MSG_DIALOG_BUTTON_ID_NO : SCE_MSG_DIALOG_BUTTON_ID_NO;
+        uncommon_dialog.touch_button_count = 2;
+
         drawButton(second_btn, bx, by + 1);
         pgf_draw_text(bx + BUTTON_SIZE + btn_label_gap, by, DIALOG_COLOR, btn_string2);
       }

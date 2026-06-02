@@ -116,6 +116,7 @@ MenuEntry menu_main_entries[] = {
   { ADHOC_TRANSFER, 11, CTX_FLAG_MORE, CTX_INVISIBLE },
   { BOOKMARKS,      12, CTX_FLAG_MORE, CTX_INVISIBLE },
   { UNDO_ACTION,    13, 0, CTX_INVISIBLE },
+  { LAUNCH_APP_GAME,14, 0, CTX_INVISIBLE },
 };
 
 #define N_MENU_MAIN_ENTRIES (sizeof(menu_main_entries) / sizeof(MenuEntry))
@@ -652,6 +653,7 @@ void setContextMenuMoreVisibilities() {
 
   if(file_entry->type != FILE_TYPE_VPK) {
     menu_more_entries[MENU_MORE_ENTRY_INSTALL_ALL].visibility = CTX_INVISIBLE;
+    menu_main_entries[MENU_MAIN_ENTRY_LAUNCH_APP].visibility = CTX_INVISIBLE;
   }
 
   // Invisible export for non-media files
@@ -956,6 +958,7 @@ int contextMenuMainEnterCallback(int sel, void *context) {
     case MENU_MAIN_ENTRY_MOVE:
     case MENU_MAIN_ENTRY_COPY:
     {
+      memset(last_installed_titleid, 0, sizeof(last_installed_titleid));
       FileListEntry *file_entry = fileListGetNthEntry(&file_list, base_pos + rel_pos);
       if (file_entry) {
         // Umount if last path copied from is the pfs mounted path
@@ -1121,6 +1124,24 @@ int contextMenuMainEnterCallback(int sel, void *context) {
       setContextMenu(&context_menu_adhoc);
       setContextMenuAdhocVisibilities();
       return CONTEXT_MENU_MORE_OPENING;
+    }
+
+    case MENU_MAIN_ENTRY_LAUNCH_APP:
+    {
+      FileListEntry *file_entry = fileListGetNthEntry(&file_list, base_pos + rel_pos);
+      if (file_entry && !file_entry->is_folder) {
+        int type = getFileType(file_entry->name);
+        if (type == FILE_TYPE_VPK) {
+          if (getDialogStep() == DIALOG_STEP_NONE) {
+            snprintf(cur_file, MAX_PATH_LENGTH, "%s%s", file_list.path, file_entry->name);
+            memset(last_installed_titleid, 0, sizeof(last_installed_titleid));
+            is_direct_launch = 1;
+            initMessageDialog(MESSAGE_DIALOG_PROGRESS_BAR, language_container[INSTALLING]);
+            setDialogStep(DIALOG_STEP_INSTALL_CONFIRMED);
+          }
+        }
+      }
+      break;
     }
 
     case MENU_MAIN_ENTRY_UNDO:

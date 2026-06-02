@@ -53,6 +53,8 @@ INCLUDE_EXTERN_RESOURCE(default_sfo_icon_png);
 INCLUDE_EXTERN_RESOURCE(default_text_icon_png);
 INCLUDE_EXTERN_RESOURCE(default_file_symlink_icon_png);
 INCLUDE_EXTERN_RESOURCE(default_folder_symlink_icon_png);
+INCLUDE_EXTERN_RESOURCE(default_button_fav_png);
+INCLUDE_EXTERN_RESOURCE(default_button_plus_png);
 
 INCLUDE_EXTERN_RESOURCE(electron_colors_txt);
 INCLUDE_EXTERN_RESOURCE(electron_archive_icon_png);
@@ -92,10 +94,10 @@ extern unsigned char _binary_modules_patch_patch_skprx_start;
 extern unsigned char _binary_modules_patch_patch_skprx_size;
 extern unsigned char _binary_modules_usbdevice_usbdevice_skprx_start;
 extern unsigned char _binary_modules_usbdevice_usbdevice_skprx_size;
-extern unsigned char _binary_build_resources_gif_default_theme_gif_start;
-extern unsigned char _binary_build_resources_gif_default_theme_gif_size;
-extern unsigned char _binary_build_resources_image_theme_png_start;
-extern unsigned char _binary_build_resources_image_theme_png_size;
+extern unsigned char _binary_resources_gif_default_theme_gif_start;
+extern unsigned char _binary_resources_gif_default_theme_gif_size;
+extern unsigned char _binary_resources_image_theme_png_start;
+extern unsigned char _binary_resources_image_theme_png_size;
 
 #define DEFAULT_FILE(path, name, replace) { path, (void *)&_binary_resources_##name##_start, (int)&_binary_resources_##name##_size, replace }
 
@@ -154,10 +156,10 @@ static DefaultFile default_files[] = {
   DEFAULT_FILE("ux0:FMVita/theme/Electron/settings.png", electron_settings_png, 1),
 
   DEFAULT_FILE("ux0:FMVita/module/umass.skprx", umass_skprx, 1),
-  { "ux0:FMVita/GIF/theme.gif",         (void *)&_binary_build_resources_gif_default_theme_gif_start,
-                                           (int)&_binary_build_resources_gif_default_theme_gif_size, 1 },
-  { "ux0:FMVita/Background/bg.png",     (void *)&_binary_build_resources_image_theme_png_start,
-                                           (int)&_binary_build_resources_image_theme_png_size, 1 },
+  { "ux0:FMVita/GIF/theme.gif",         (void *)&_binary_resources_gif_default_theme_gif_start,
+                                           (int)&_binary_resources_gif_default_theme_gif_size, 1 },
+  { "ux0:FMVita/Background/bg.png",     (void *)&_binary_resources_image_theme_png_start,
+                                           (int)&_binary_resources_image_theme_png_size, 1 },
   
   { "ux0:FMVita/module/kernel.skprx",    (void *)&_binary_modules_kernel_kernel_skprx_start,
                                                (int)&_binary_modules_kernel_kernel_skprx_size, 1 },
@@ -371,6 +373,7 @@ void initVitaShell() {
   sceTouchSetSamplingState(SCE_TOUCH_PORT_FRONT, SCE_TOUCH_SAMPLING_STATE_START);
 
   // Load modules
+  sceSysmoduleLoadModule(SCE_SYSMODULE_AVPLAYER);
   sceSysmoduleLoadModule(SCE_SYSMODULE_VIDEO_EXPORT);
   sceSysmoduleLoadModule(SCE_SYSMODULE_PGF);
   sceSysmoduleLoadModule(SCE_SYSMODULE_MUSIC_EXPORT);

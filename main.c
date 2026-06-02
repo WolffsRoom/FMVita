@@ -78,6 +78,14 @@ char touch_confirm_message[MAX_CONFIRM_MSG] = "";
 void (*touch_confirm_yes_cb)(void) = NULL;
 void (*touch_confirm_no_cb)(void) = NULL;
 
+char last_installed_titleid[12] = "";
+volatile int is_direct_launch = 0;
+
+char qr_dialog_url[QR_DIALOG_URL_SIZE] = "";
+char qr_dialog_filename[QR_DIALOG_FNAME_SIZE] = "";
+char qr_dialog_size[16] = "";
+int qr_dialog_is_vpk = 0;
+
 void setTouchConfirm(const char *msg, void (*yes_cb)(void), void (*no_cb)(void)) {
   strncpy(touch_confirm_message, msg, MAX_CONFIRM_MSG - 1);
   touch_confirm_message[MAX_CONFIRM_MSG - 1] = '\0';
@@ -179,6 +187,88 @@ void drawFtpTouchDialog() {
   vita2d_draw_rectangle(stop_x, stop_y, stop_w, stop_h, themeButtonDanger(vitashell_config.theme_preset));
   vita2d_draw_rectangle(stop_x, stop_y, stop_w, 2, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 30));
   draw_centered_text(stop_x + stop_w / 2.0f, stop_y + 12, themeTopbarText(vitashell_config.theme_preset), language_container[FTP_STOP_LABEL]);
+}
+
+static void draw_formatted_text(float x, float y, unsigned int color, const char *fmt, ...) {
+  char buf[256];
+  va_list list;
+  va_start(list, fmt);
+  vsnprintf(buf, sizeof(buf), fmt, list);
+  va_end(list);
+  // Replace \ with newline and draw multi-line
+  char line[256];
+  int li = 0, bi = 0;
+  for (int i = 0; buf[i] != '\0' && bi < (int)sizeof(buf) - 1; i++) {
+    if (buf[i] == '\\') {
+      line[li] = '\0';
+      if (li > 0) pgf_draw_text(x, y, color, line);
+      y += FONT_Y_SPACE;
+      li = 0;
+    } else {
+      line[li++] = buf[i];
+      if (li >= (int)sizeof(line) - 1) { line[li] = '\0'; pgf_draw_text(x, y, color, line); y += FONT_Y_SPACE; li = 0; }
+    }
+  }
+  if (li > 0) { line[li] = '\0'; pgf_draw_text(x, y, color, line); }
+}
+
+void drawQrTouchDialog() {
+  int step = getDialogStep();
+  if (step != DIALOG_STEP_QR_CONFIRM_TOUCH && step != DIALOG_STEP_QR_WEBSITE_TOUCH)
+    return;
+
+  vita2d_common_dialog_update();
+
+  vita2d_draw_rectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, RGBA8(0, 0, 0, 190));
+
+  int cw = 580, ch = 260;
+  int cx = (SCREEN_WIDTH - cw) / 2, cy = (SCREEN_HEIGHT - ch) / 2;
+  vita2d_draw_rectangle(cx, cy, cw, ch, themeDialogBg(vitashell_config.theme_preset));
+  vita2d_draw_rectangle(cx, cy, cw, 1, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 25));
+  vita2d_draw_rectangle(cx, cy + ch - 1, cw, 1, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 15));
+
+  int enter_btn = (enter_button == SCE_SYSTEM_PARAM_ENTER_BUTTON_CIRCLE) ? BUTTON_CIRCLE : BUTTON_CROSS;
+  int cancel_btn = (enter_button == SCE_SYSTEM_PARAM_ENTER_BUTTON_CIRCLE) ? BUTTON_CROSS : BUTTON_CIRCLE;
+
+  if (step == DIALOG_STEP_QR_WEBSITE_TOUCH) {
+    char msg[512];
+    snprintf(msg, sizeof(msg), language_container[QR_OPEN_WEBSITE], qr_dialog_url);
+    draw_formatted_text(cx + 20, cy + 22, themeTextColor(vitashell_config.theme_preset), "%s", msg);
+
+    // Yes button (open browser)
+    int sim_x = cx + 50, sim_y = cy + 180, sim_w = 190, sim_h = 52;
+    vita2d_draw_rectangle(sim_x, sim_y, sim_w, sim_h, themeButtonSuccess(vitashell_config.theme_preset));
+    vita2d_draw_rectangle(sim_x, sim_y, sim_w, 2, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 60));
+    drawButton(enter_btn, sim_x + 20, sim_y + 16);
+    draw_centered_text(sim_x + sim_w / 2.0f + 15, sim_y + 16, themeTopbarText(vitashell_config.theme_preset), language_container[YES]);
+
+    int nao_x = cx + cw - 50 - 190, nao_y = cy + 180, nao_w = 190, nao_h = 52;
+    vita2d_draw_rectangle(nao_x, nao_y, nao_w, nao_h, themeButtonDanger(vitashell_config.theme_preset));
+    vita2d_draw_rectangle(nao_x, nao_y, nao_w, 2, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 50));
+    drawButton(cancel_btn, nao_x + 20, nao_y + 16);
+    draw_centered_text(nao_x + nao_w / 2.0f + 15, nao_y + 16, themeTopbarText(vitashell_config.theme_preset), language_container[NO]);
+  } else {
+    // QR_CONFIRM_TOUCH — format language strings properly to replace %s and backslash-newline
+    char msg[512];
+    if (qr_dialog_is_vpk)
+      snprintf(msg, sizeof(msg), language_container[QR_CONFIRM_INSTALL], qr_dialog_url, qr_dialog_filename, qr_dialog_size);
+    else
+      snprintf(msg, sizeof(msg), language_container[QR_CONFIRM_DOWNLOAD], qr_dialog_url, qr_dialog_filename, qr_dialog_size);
+    draw_formatted_text(cx + 20, cy + 22, themeTextColor(vitashell_config.theme_preset), "%s", msg);
+
+    // Yes button (download)
+    int sim_x = cx + 50, sim_y = cy + 180, sim_w = 190, sim_h = 52;
+    vita2d_draw_rectangle(sim_x, sim_y, sim_w, sim_h, themeButtonSuccess(vitashell_config.theme_preset));
+    vita2d_draw_rectangle(sim_x, sim_y, sim_w, 2, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 60));
+    drawButton(enter_btn, sim_x + 20, sim_y + 16);
+    draw_centered_text(sim_x + sim_w / 2.0f + 15, sim_y + 16, themeTopbarText(vitashell_config.theme_preset), language_container[YES]);
+
+    int nao_x = cx + cw - 50 - 190, nao_y = cy + 180, nao_w = 190, nao_h = 52;
+    vita2d_draw_rectangle(nao_x, nao_y, nao_w, nao_h, themeButtonDanger(vitashell_config.theme_preset));
+    vita2d_draw_rectangle(nao_x, nao_y, nao_w, 2, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 50));
+    drawButton(cancel_btn, nao_x + 20, nao_y + 16);
+    draw_centered_text(nao_x + nao_w / 2.0f + 15, nao_y + 16, themeTopbarText(vitashell_config.theme_preset), language_container[NO]);
+  }
 }
 
 int getDialogStep() {
@@ -373,13 +463,13 @@ void drawHeaderOverlay() {
   vita2d_draw_rectangle(0, hy+HEADER_H-1, SCREEN_WIDTH, 1, COLOR_ALPHA(t_txt, 10));
 
   unsigned int hc = COLOR_ALPHA(themeTextColor(vitashell_config.theme_preset), 220);
-  float ty = hy + 6;
+  float ty = hy + 2;
 
   if (vitashell_config.view_mode != 1) {
-    pgf_draw_text(FILE_X, ty, hc, "Nome");
+    pgf_draw_text(FILE_X, ty, hc, language_container[BY_NAME]);
     if (vitashell_config.view_mode == 0) {
-      pgf_draw_text(ALIGN_RIGHT(INFORMATION_X, pgf_text_width("Tamanho")), ty, hc, "Tamanho");
-      pgf_draw_text(ALIGN_RIGHT(SCREEN_WIDTH-SHELL_MARGIN_X, pgf_text_width("Data")), ty, hc, "Data");
+      pgf_draw_text(ALIGN_RIGHT(INFORMATION_X, pgf_text_width(language_container[BY_SIZE])), ty, hc, language_container[BY_SIZE]);
+      pgf_draw_text(ALIGN_RIGHT(SCREEN_WIDTH-SHELL_MARGIN_X, pgf_text_width(language_container[BY_DATE])), ty, hc, language_container[BY_DATE]);
     }
   }
 }
@@ -594,6 +684,7 @@ int dialogSteps() {
           fileListEmpty(&copy_list);
         }
 
+        memset(last_installed_titleid, 0, sizeof(last_installed_titleid));
         refresh = REFRESH_MODE_SETFOCUS;
         setDialogStep(DIALOG_STEP_NONE);
       }
@@ -774,14 +865,16 @@ int dialogSteps() {
         }
         touch_confirm_yes_cb = NULL;
         touch_confirm_no_cb = NULL;
-        setDialogStep(DIALOG_STEP_NONE);
+        if (getDialogStep() == DIALOG_STEP_TOUCH_CONFIRM)
+          setDialogStep(DIALOG_STEP_NONE);
       } else if (pressed_pad[PAD_CANCEL]) {
         if (touch_confirm_no_cb) {
           touch_confirm_no_cb();
         }
         touch_confirm_yes_cb = NULL;
         touch_confirm_no_cb = NULL;
-        setDialogStep(DIALOG_STEP_NONE);
+        if (getDialogStep() == DIALOG_STEP_TOUCH_CONFIRM)
+          setDialogStep(DIALOG_STEP_NONE);
       }
       break;
     }
@@ -915,7 +1008,7 @@ int dialogSteps() {
             snprintf(new_path, MAX_PATH_LENGTH, "%s%s", file_list.path, name);
 
             if (isProtectedPath(old_path)) {
-              infoDialog("Erro: Pasta de sistema protegida.");
+              infoDialog(language_container[PROTECTED_PATH]);
             } else {
               int res = sceIoRename(old_path, new_path);
               if (res < 0) {
@@ -1171,9 +1264,38 @@ int dialogSteps() {
         }
 
         refresh = REFRESH_MODE_NORMAL;
-        setDialogStep(DIALOG_STEP_NONE);
+
+        if (last_installed_titleid[0] != '\0' && getDialogStep() != DIALOG_STEP_COPIED && getDialogStep() != DIALOG_STEP_MOVED) {
+          if (is_direct_launch) {
+            is_direct_launch = 0;
+            launchAppByUriExit(last_installed_titleid);
+            setDialogStep(DIALOG_STEP_NONE);
+          } else {
+            initMessageDialog(SCE_MSG_DIALOG_BUTTON_TYPE_YESNO, language_container[RUN_APP_AFTER_INSTALL]);
+            setDialogStep(DIALOG_STEP_RUN_APP_QUESTION);
+          }
+        } else {
+          setDialogStep(DIALOG_STEP_NONE);
+          is_direct_launch = 0;
+          fileListEmpty(&install_list);
+        }
       }
 
+      break;
+    }
+
+    case DIALOG_STEP_RUN_APP_QUESTION:
+    {
+      if (msg_result == MESSAGE_DIALOG_RESULT_YES) {
+        if (last_installed_titleid[0] != '\0') {
+          launchAppByUriExit(last_installed_titleid);
+        }
+        setDialogStep(DIALOG_STEP_NONE);
+      } else if (msg_result == MESSAGE_DIALOG_RESULT_NO) {
+        refresh = REFRESH_MODE_NORMAL;
+        setDialogStep(DIALOG_STEP_NONE);
+        is_direct_launch = 0;
+      }
       break;
     }
     
@@ -1251,6 +1373,28 @@ int dialogSteps() {
         setDialogStep(DIALOG_STEP_NONE);
       }
       
+      break;
+    }
+    
+    case DIALOG_STEP_QR_CONFIRM_TOUCH:
+    {
+      if (pressed_pad[PAD_ENTER]) {
+        initMessageDialog(MESSAGE_DIALOG_PROGRESS_BAR, language_container[DOWNLOADING]);
+        setDialogStep(DIALOG_STEP_QR_DOWNLOADING);
+      } else if (pressed_pad[PAD_CANCEL]) {
+        setDialogStep(DIALOG_STEP_NONE);
+      }
+      break;
+    }
+    
+    case DIALOG_STEP_QR_WEBSITE_TOUCH:
+    {
+      if (pressed_pad[PAD_ENTER]) {
+        setDialogStep(DIALOG_STEP_NONE);
+        sceAppMgrLaunchAppByUri(0xFFFFF, getLastQR());
+      } else if (pressed_pad[PAD_CANCEL]) {
+        setDialogStep(DIALOG_STEP_NONE);
+      }
       break;
     }
     

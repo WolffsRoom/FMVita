@@ -176,7 +176,8 @@ VITASHELL_SETTINGS_USB_GAME_CARD	 = "Карта с игрой"
 VITASHELL_SETTINGS_USB_SD2VITA		 = "SD2Vita"
 VITASHELL_SETTINGS_USB_PSVSD		 = "PSVSD"
 VITASHELL_SETTINGS_SELECT_BUTTON_USB = "USB соединение"
-VITASHELL_SETTINGS_SELECT_BUTTON_FTP = "FTP сервер"
+VITASHELL_SETTINGS_SELECT_BUTTON_FTP = "FTP сервер"
+VITASHELL_SETTINGS_SELECT_BUTTON_QR = "QR"
 
 # USB strings
 USB_CONNECTED						 = "Передача данных:\\USB соединение установлено"
@@ -222,3 +223,6 @@ UPDATE_QUESTION 					 = "Сетевое обновление:\\Для устан
 ARCHIVE_NAME						 = "Имя архива"
 COMPRESSION_LEVEL					 = "Уровень сжатия (0-9)"
 ENTER_PASSWORD						 = "Введите пароль"
+PROTECTED_PATH                       = "Error: System folder is protected."
+RUN_APP_AFTER_INSTALL                = "Installation completed. Start the app/game now?"
+LAUNCH_APP_GAME                      = "Launch app/game"

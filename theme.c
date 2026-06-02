@@ -43,6 +43,8 @@ INCLUDE_EXTERN_RESOURCE(default_pause_png);
 INCLUDE_EXTERN_RESOURCE(default_play_png);
 INCLUDE_EXTERN_RESOURCE(default_sfo_icon_png);
 INCLUDE_EXTERN_RESOURCE(default_text_icon_png);
+INCLUDE_EXTERN_RESOURCE(default_button_fav_png);
+INCLUDE_EXTERN_RESOURCE(default_button_plus_png);
 
 // Shell colors
 int BACKGROUND_COLOR;
@@ -113,7 +115,8 @@ vita2d_texture *folder_icon = NULL, *folder_symlink_icon = NULL, *file_icon = NU
     *audio_icon = NULL, *sfo_icon = NULL, *text_icon = NULL,
          *ftp_image = NULL, *dialog_image = NULL, *context_image = NULL, *context_more_image = NULL, *settings_image = NULL, *battery_image = NULL,
          *battery_bar_red_image = NULL, *battery_bar_green_image = NULL, *battery_bar_charge_image = NULL, *bg_browser_image = NULL, *bg_hex_image = NULL, *bg_text_image = NULL,
-         *bg_photo_image = NULL, *bg_audio_image = NULL, *cover_image = NULL, *play_image = NULL, *pause_image = NULL, *fastforward_image = NULL, *fastrewind_image = NULL;
+         *bg_photo_image = NULL, *bg_audio_image = NULL, *cover_image = NULL, *play_image = NULL, *pause_image = NULL, *fastforward_image = NULL, *fastrewind_image = NULL,
+    *button_fav = NULL, *button_plus = NULL;
 
 vita2d_texture *wallpaper_image;
 
@@ -158,6 +161,8 @@ ThemeImage theme_images[] = {
   { "play.png", &_binary_resources_default_play_png_start, &play_image },
   { "settings.png", NULL, &settings_image },
   { "sfo_icon.png", &_binary_resources_default_sfo_icon_png_start, &sfo_icon },
+  { "button_fav.png", &_binary_resources_default_button_fav_png_start, &button_fav },
+  { "button_plus.png", &_binary_resources_default_button_plus_png_start, &button_plus },
   { "text_icon.png", &_binary_resources_default_text_icon_png_start, &text_icon },
   { "wallpaper.png", NULL, &wallpaper_image },
 };

@@ -138,7 +138,7 @@ int delete_thread(SceSize args_size, DeleteArguments *args) {
     if (isProtectedPath(path)) {
       closeWaitDialog();
       setDialogStep(DIALOG_STEP_CANCELED);
-      infoDialog("Erro: Pasta de sistema protegida.");
+      infoDialog(language_container[PROTECTED_PATH]);
       goto EXIT;
     }
 
@@ -250,7 +250,7 @@ int copy_thread(SceSize args_size, CopyArguments *args) {
       if (isProtectedPath(src_path)) {
         closeWaitDialog();
         setDialogStep(DIALOG_STEP_CANCELED);
-        infoDialog("Erro: Pasta de sistema protegida.");
+        infoDialog(language_container[PROTECTED_PATH]);
         goto EXIT;
       }
 
@@ -369,7 +369,7 @@ int copy_thread(SceSize args_size, CopyArguments *args) {
         if (isProtectedPath(path)) {
           closeWaitDialog();
           setDialogStep(DIALOG_STEP_CANCELED);
-          infoDialog("Erro: Pasta de sistema protegida.");
+          infoDialog(language_container[PROTECTED_PATH]);
           goto EXIT;
         }
 

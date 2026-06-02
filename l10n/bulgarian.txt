@@ -36,3 +36,7 @@ FTP_SERVER                           = "Изпълнява се FTP сървър
 SYS_INFO                             = "Системен софтуер: %s\Модел: 0x%08X\MAC адрес: %s\IP адрес: %s\Мемори карта: %s/%s"
 INSTALL_ALL                          = "Инсталирай всички"
 UPDATE_QUESTION                      = "VitaShell %s е достъпна.\\Искате ли да обновите приложението?"
+PROTECTED_PATH                       = "Error: System folder is protected."
+RUN_APP_AFTER_INSTALL                = "Installation completed. Start the app/game now?"
+LAUNCH_APP_GAME                      = "Launch app/game"
+VITASHELL_SETTINGS_SELECT_BUTTON_QR = "QR"

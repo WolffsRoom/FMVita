@@ -161,7 +161,8 @@ VITASHELL_SETTINGS_USB_GAME_CARD     = "遊戲卡"
 VITASHELL_SETTINGS_USB_SD2VITA       = "sd2vita"
 VITASHELL_SETTINGS_USB_PSVSD         = "psvsd"
 VITASHELL_SETTINGS_SELECT_BUTTON_USB = "USB"
-VITASHELL_SETTINGS_SELECT_BUTTON_FTP = "FTP"
+VITASHELL_SETTINGS_SELECT_BUTTON_FTP = "FTP"
+VITASHELL_SETTINGS_SELECT_BUTTON_QR = "QR"
 
 # USB strings
 USB_CONNECTED                        = "USB 已連接。"
@@ -201,3 +202,6 @@ UPDATE_QUESTION                      = "發現 VitaShell 有可用的新版本�
 ARCHIVE_NAME                         = "壓縮檔名稱"
 COMPRESSION_LEVEL                    = "壓縮等級 (0-9)"
 ENTER_PASSWORD                       = "輸入密碼"
+PROTECTED_PATH                       = "Error: System folder is protected."
+RUN_APP_AFTER_INSTALL                = "Installation completed. Start the app/game now?"
+LAUNCH_APP_GAME                      = "Launch app/game"

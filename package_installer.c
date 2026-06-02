@@ -29,23 +29,23 @@
 
 INCLUDE_EXTERN_RESOURCE(head_bin);
 
+extern char last_installed_titleid[12];
+
 static int loadScePaf() {
   static uint32_t argp[] = { 0x180000, -1, -1, 1, -1, -1 };
 
   int result = -1;
+  SceSysmoduleOpt opt;
+  memset(&opt, 0, sizeof(opt));
+  opt.result = &result;
 
-  uint32_t buf[4];
-  buf[0] = sizeof(buf);
-  buf[1] = (uint32_t)&result;
-  buf[2] = -1;
-  buf[3] = -1;
-
-  return sceSysmoduleLoadModuleInternalWithArg(SCE_SYSMODULE_INTERNAL_PAF, sizeof(argp), argp, (const SceSysmoduleOpt *)buf);
+  return sceSysmoduleLoadModuleInternalWithArg(SCE_SYSMODULE_INTERNAL_PAF, sizeof(argp), argp, &opt);
 }
 
 static int unloadScePaf() {
-  uint32_t buf = 0;
-  return sceSysmoduleUnloadModuleInternalWithArg(SCE_SYSMODULE_INTERNAL_PAF, 0, NULL, (const SceSysmoduleOpt *)&buf);
+  SceSysmoduleOpt opt;
+  memset(&opt, 0, sizeof(opt));
+  return sceSysmoduleUnloadModuleInternalWithArg(SCE_SYSMODULE_INTERNAL_PAF, 0, NULL, &opt);
 }
 
 int promotePsm(const char *path, const char *titleid) {
@@ -241,6 +241,9 @@ int makeHeadBin() {
   char titleid[12];
   memset(titleid, 0, sizeof(titleid));
   getSfoString(sfo_buffer, "TITLE_ID", titleid, sizeof(titleid));
+
+  // Save title id for post-installation launching
+  strcpy(last_installed_titleid, titleid);
 
   // Enforce TITLE_ID format
   if ((strlen(titleid) != 9) || (strncmp(titleid, strupr(titleid), 9) != 0))

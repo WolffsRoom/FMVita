@@ -17,7 +17,8 @@ set(VITA_TITLEID  "FILEMNGR1")
 set(VITA_VERSION  "02.02")
 
 # Flags and includes
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu11 -Wl,-q -Wall -O3 -Wno-unused-variable -Wno-unused-but-set-variable -Wno-format-truncation -fno-lto")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu11 -Wl,-q -Wall -Os -Wno-unused-variable -Wno-unused-but-set-variable -Wno-format-truncation -fno-lto")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--section-start,.sceModuleInfo=0xE00000")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c+ + 11 -fno-rtti -fno-exceptions")
 set(VITA_MKSFOEX_FLAGS "${VITA_MKSFOEX_FLAGS} -d PARENTAL_LEVEL=1")
 set(VITA_MAKE_FSELF_FLAGS "${VITA_MAKE_FSELF_FLAGS} -a 0x2808000000000000")
@@ -73,8 +74,8 @@ file(GLOB res_files RELATIVE
   resources/*.png
   resources/*.txt
   resources/*.bin
-  build/resources/gif_default/*.gif
-  build/resources/image/*.png
+  resources/gif_default/*.gif
+  resources/image/*.png
 )
 
 # ugly hack
@@ -106,6 +107,7 @@ add_executable(VitaShell
   psarc.c
   photo.c
   audioplayer.c
+  videoplayer.c
   file.c
   text.c
   hex.c
@@ -152,9 +154,13 @@ add_executable(VitaShell
 
 add_dependencies(VitaShell vitashell_user_stubs)
 add_dependencies(VitaShell kernel)
+add_dependencies(VitaShell kernel.skprx-self)
 add_dependencies(VitaShell user)
+add_dependencies(VitaShell user.suprx-self)
 add_dependencies(VitaShell patch)
+add_dependencies(VitaShell patch.skprx-self)
 add_dependencies(VitaShell usbdevice)
+add_dependencies(VitaShell usbdevice.skprx-self)
 
 target_link_libraries(VitaShell
   ${CMAKE_CURRENT_BINARY_DIR}/modules/user/libVitaShellUser_stub_weak.a
@@ -181,6 +187,7 @@ target_link_libraries(VitaShell
   SceAppUtil_stub
   SceAudio_stub
   SceAudiodec_stub
+  SceAvPlayer_stub
   SceCamera_stub
   SceCommonDialog_stub
   SceCtrl_stub

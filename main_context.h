@@ -43,6 +43,7 @@ enum MenuMainEntrys {
   MENU_MAIN_ENTRY_ADHOC,
   MENU_MAIN_ENTRY_BOOKMARKS,
   MENU_MAIN_ENTRY_UNDO,
+  MENU_MAIN_ENTRY_LAUNCH_APP,
 };
 
 void initContextMenuWidth();

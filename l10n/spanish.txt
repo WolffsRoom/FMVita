@@ -176,7 +176,8 @@ VITASHELL_SETTINGS_USB_GAME_CARD     = "Tarjeta de Juego"
 VITASHELL_SETTINGS_USB_SD2VITA       = "sd2vita"
 VITASHELL_SETTINGS_USB_PSVSD         = "psvsd"
 VITASHELL_SETTINGS_SELECT_BUTTON_USB = "USB"
-VITASHELL_SETTINGS_SELECT_BUTTON_FTP = "FTP"
+VITASHELL_SETTINGS_SELECT_BUTTON_FTP = "FTP"
+VITASHELL_SETTINGS_SELECT_BUTTON_QR = "QR"
 
 # USB strings - Carácteres USB
 USB_CONNECTED                        = "USB conectado"
@@ -222,3 +223,6 @@ UPDATE_QUESTION                      = "VitaShell %s está disponible\\¿Quieres
 ARCHIVE_NAME                         = "Nombre del archivo"
 COMPRESSION_LEVEL                    = "Nivel de compresión (0-9)"
 ENTER_PASSWORD                       = "Ingresa la contraseña"
+PROTECTED_PATH                       = "Error: System folder is protected."
+RUN_APP_AFTER_INSTALL                = "Installation completed. Start the app/game now?"
+LAUNCH_APP_GAME                      = "Launch app/game"

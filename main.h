@@ -234,15 +234,19 @@ enum DialogSteps {
   DIALOG_STEP_QR_DONE,
   DIALOG_STEP_QR_WAITING,
   DIALOG_STEP_QR_CONFIRM,
+  DIALOG_STEP_QR_CONFIRM_TOUCH,
+  DIALOG_STEP_QR_WEBSITE_TOUCH,
   DIALOG_STEP_QR_DOWNLOADING,
   DIALOG_STEP_QR_DOWNLOADED,
   DIALOG_STEP_QR_DOWNLOADED_VPK,
   DIALOG_STEP_QR_OPEN_WEBSITE,
   DIALOG_STEP_QR_SHOW_CONTENTS,
   
-  DIALOG_STEP_ENTER_PASSWORD,
-  
-  DIALOG_STEP_ADHOC_SEND_NETCHECK,
+   DIALOG_STEP_ENTER_PASSWORD,
+
+   DIALOG_STEP_RUN_APP_QUESTION,
+   
+   DIALOG_STEP_ADHOC_SEND_NETCHECK,
   DIALOG_STEP_ADHOC_SEND_WAITING,
   DIALOG_STEP_ADHOC_SEND_CLIENT_DECLINED,
   DIALOG_STEP_ADHOC_SENDING,
@@ -278,6 +282,18 @@ extern int use_custom_config;
 int getDialogStep();
 void setDialogStep(int step);
 int dialogSteps();
+
+extern char last_installed_titleid[12];
+extern volatile int is_direct_launch;
+
+#define QR_DIALOG_URL_SIZE 1024
+#define QR_DIALOG_FNAME_SIZE 256
+extern char qr_dialog_url[QR_DIALOG_URL_SIZE];
+extern char qr_dialog_filename[QR_DIALOG_FNAME_SIZE];
+extern char qr_dialog_size[16];
+extern int qr_dialog_is_vpk;
+
+void drawQrTouchDialog();
 
 void initFtp();
 void initUsb();

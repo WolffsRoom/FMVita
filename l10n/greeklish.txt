@@ -30,3 +30,7 @@ INSTALL_WARNING                      = "Afto to paketo apaitei dikaiomata.\Tha e
 SAVE_MODIFICATIONS                   = "Thelete na apothikefsete tis allages sas;"
 WIFI_ERROR                           = "Tha prepei na xrisimopoiisete Wi-Fi gia na to kanete afto."
 FTP_SERVER                           = "O FTP server pleon trexei se \ftp://%s:%i\\Patiste 'OK' gia na kratisete ti leitourgeia sto paraskinio.\Patiste 'Akyrosi' gia na aposyndetheite."
+PROTECTED_PATH                       = "Error: System folder is protected."
+RUN_APP_AFTER_INSTALL                = "Installation completed. Start the app/game now?"
+LAUNCH_APP_GAME                      = "Launch app/game"
+VITASHELL_SETTINGS_SELECT_BUTTON_QR = "QR"

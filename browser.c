@@ -28,6 +28,7 @@
 #include "archive.h"
 #include "photo.h"
 #include "audioplayer.h"
+#include "videoplayer.h"
 #include "file.h"
 #include "text.h"
 #include "hex.h"
@@ -35,6 +36,7 @@
 #include "adhoc_dialog.h"
 #include "property_dialog.h"
 #include "message_dialog.h"
+#include "uncommon_dialog.h"
 #include "netcheck_dialog.h"
 
 #define GRID_COLS 5
@@ -158,6 +160,8 @@ Particle particles[NUM_PARTICLES];
 int particles_initialized = 0;
 
 static float scroll_x = FILE_X;
+
+// (Tab system removed)
 
 // Archive
 static int is_in_archive = 0;
@@ -609,6 +613,10 @@ static int handleFile(const char *file, FileListEntry *entry) {
     case FILE_TYPE_OGG:
       res = audioPlayer(file, type, &file_list, entry, &base_pos, &rel_pos);
       break;
+
+    case FILE_TYPE_MP4:
+      res = videoPlayer(file, &file_list, entry, &base_pos, &rel_pos);
+      break;
       
     case FILE_TYPE_SFO:
       res = SFOReader(file);
@@ -758,6 +766,16 @@ static int fileBrowserMenuCtrl() {
       // Dialog - custom touch FTP dialog
       if (ftpvita_is_initialized()) {
         setDialogStep(DIALOG_STEP_FTP_TOUCH);
+      }
+    } else if (vitashell_config.select_button == SELECT_BUTTON_MODE_QR) {
+      if (!enabledQR()) {
+        initQR();
+      }
+
+      if (enabledQR()) {
+        startQR();
+        initMessageDialog(MESSAGE_DIALOG_QR_CODE, language_container[QR_SCANNING]);
+        setDialogStep(DIALOG_STEP_QR);
       }
     }
   }
@@ -1079,8 +1097,10 @@ int browserMain() {
 
   while (1) {
     readPad();
+    checkDialogTouch();
 
     int refresh = REFRESH_MODE_NONE;
+    int top_bar_boundary = 96;
 
     // ----- RIGHT ANALOG → MOUSE CURSOR -----
     if (mouse_tex) {
@@ -1108,7 +1128,7 @@ int browserMain() {
         mouse_inactive = 0;
         // Determine what's at cursor position
         int mx = (int)mouse_x, my = (int)mouse_y;
-        if (my <= 92) {
+        if (my <= top_bar_boundary - 4) {
           // Toolbar
           if (my >= 5 && my < 45) {
             // Address card — open context menu
@@ -1250,7 +1270,7 @@ int browserMain() {
                 is_dragging = 0;
 
                  // Toolbar touch: record press, execute on release
-                if (!touch_handled && ty <= 92) {
+                if (!touch_handled && ty <= top_bar_boundary - 4) {
                     touch_handled = 1;
                     if (ty >= 5 && ty < 45) {
                         // Address card → context menu (reset touch state)
@@ -1300,7 +1320,7 @@ int browserMain() {
                 
                 // Square + touch on file → drag mode
                 drag_file_active = 0;
-               if (current_pad[PAD_SQUARE] && ty > 92) {
+               if (current_pad[PAD_SQUARE] && ty > top_bar_boundary - 4) {
                    int idx;
                    if (vitashell_config.view_mode != 1) {
                         idx = (ty + scroll_y < START_Y) ? -1 : (int)((ty + scroll_y - START_Y) / FONT_Y_SPACE);
@@ -1437,7 +1457,7 @@ skip_touch_processing:
                       pressed_pad[PAD_ENTER] = 1;
                   }
                 } else if (abs((int)diff_x) < 35 && abs((int)diff_y) < 35) {
-                    if (touch_y_last <= 92 && !touch_handled) {
+                    if (touch_y_last <= top_bar_boundary - 4 && !touch_handled) {
                         int tx = touch_x_last, ty = touch_y_last;
                         // Address card row (y:5-45)
                         if (ty >= 5 && ty < 45) {
@@ -1480,7 +1500,7 @@ skip_touch_processing:
                                     }
                                 }
                            }
-                      } else if (touch_y_last > 92) {
+                      } else if (touch_y_last > top_bar_boundary - 4) {
                          // Check floating action buttons (bottom-right) before file list
                          int btn_size = 48, btn_gap = 12;
                          int btn_rx = SCREEN_WIDTH - 20 - btn_size;
@@ -1620,7 +1640,8 @@ skip_touch_processing:
           }
           touch_confirm_yes_cb = NULL;
           touch_confirm_no_cb = NULL;
-          setDialogStep(DIALOG_STEP_NONE);
+          if (getDialogStep() == DIALOG_STEP_TOUCH_CONFIRM)
+            setDialogStep(DIALOG_STEP_NONE);
         }
         int nao_x = cx + cw - 50 - 190, nao_y = cy + 105, nao_w = 190, nao_h = 52;
         if (tx >= nao_x && tx < nao_x + nao_w && ty >= nao_y && ty < nao_y + nao_h) {
@@ -1629,7 +1650,8 @@ skip_touch_processing:
           }
           touch_confirm_yes_cb = NULL;
           touch_confirm_no_cb = NULL;
-          setDialogStep(DIALOG_STEP_NONE);
+          if (getDialogStep() == DIALOG_STEP_TOUCH_CONFIRM)
+            setDialogStep(DIALOG_STEP_NONE);
         }
       }
     } else if (getDialogStep() == DIALOG_STEP_FTP_TOUCH) {
@@ -1685,8 +1707,35 @@ skip_touch_processing:
           setDialogStep(DIALOG_STEP_NONE);
         }
       }
+    } else if (getDialogStep() == DIALOG_STEP_QR_CONFIRM_TOUCH ||
+               getDialogStep() == DIALOG_STEP_QR_WEBSITE_TOUCH) {
+      // QR touch dialog: Sim/Não buttons
+      if (touch.reportNum > 0) {
+        if (!is_touching) {
+          is_touching = 1;
+          touch_x_start = (touch.report[0].x * 960) / 1920;
+          touch_y_start = (touch.report[0].y * 544) / 1088;
+        }
+        touch_x_last = (touch.report[0].x * 960) / 1920;
+        touch_y_last = (touch.report[0].y * 544) / 1088;
+      } else if (is_touching) {
+        is_touching = 0;
+        int tx = touch_x_last, ty = touch_y_last;
+        int cw = 580, ch = 260;
+        int cx = (SCREEN_WIDTH - cw) / 2, cy = (SCREEN_HEIGHT - ch) / 2;
+        int sim_x = cx + 50, sim_y = cy + 180, sim_w = 190, sim_h = 52;
+        if (tx >= sim_x && tx < sim_x + sim_w && ty >= sim_y && ty < sim_y + sim_h) {
+          pressed_pad[PAD_ENTER] = 1;
+        }
+        int nao_x = cx + cw - 50 - 190, nao_y = cy + 180, nao_w = 190, nao_h = 52;
+        if (tx >= nao_x && tx < nao_x + nao_w && ty >= nao_y && ty < nao_y + nao_h) {
+          pressed_pad[PAD_CANCEL] = 1;
+        }
+      }
     }
     // ----- END TOUCH ENGINE -----
+
+    // (Tab switching removed)
 
     // Control
     if (getDialogStep() != DIALOG_STEP_NONE) {
@@ -1914,8 +1963,10 @@ FONT_Y_SPACE) - (MAX_ENTRIES * FONT_Y_SPACE);
 
     drawShellInfo(file_list.path);
 
-    // Clip file list area: below top bar (96px) to above status bar
-    vita2d_set_clip_rectangle(0, 96, SCREEN_WIDTH, SCREEN_HEIGHT - 96 - STATUSBAR_H);
+    int top_bar_render_end = 96;
+
+    // Clip file list area: below top bar to above status bar
+    vita2d_set_clip_rectangle(0, top_bar_render_end, SCREEN_WIDTH, SCREEN_HEIGHT - top_bar_render_end - STATUSBAR_H);
 
     int start_i = 0;
     if (vitashell_config.view_mode != 1) start_i = (int)(scroll_y / FONT_Y_SPACE);
@@ -2319,14 +2370,25 @@ COLOR_ALPHA(themeListBg(vitashell_config.theme_preset), 100) : themeListBg(vitas
       vita2d_draw_rectangle(btn_rx, btn_plus_y, btn_size, btn_size, tb_card);
       vita2d_draw_rectangle(btn_rx, btn_plus_y, btn_size, 2, tb_acc);
       vita2d_draw_rectangle(btn_rx, btn_plus_y+btn_size-1, btn_size, 1, COLOR_ALPHA(tb_text, 10));
-      pgf_draw_text(btn_rx + (btn_size - pgf_text_width("+")) / 2.0f, btn_plus_y + 12, tb_text, "+");
+      if (button_plus) {
+        int pw = vita2d_texture_get_width(button_plus);
+        int ph = vita2d_texture_get_height(button_plus);
+        vita2d_draw_texture(button_plus, (float)(btn_rx + (btn_size - pw) / 2), (float)(btn_plus_y + (btn_size - ph) / 2));
+      }
       // Floating bookmark button (toolbar card style)
       unsigned int bmk_col = themeButtonDefault(vitashell_config.theme_preset);
       vita2d_draw_rectangle(btn_rx, btn_bmk_y, btn_size, btn_size, tb_card);
       vita2d_draw_rectangle(btn_rx, btn_bmk_y, btn_size, 2, bmk_col);
       vita2d_draw_rectangle(btn_rx, btn_bmk_y+btn_size-1, btn_size, 1, COLOR_ALPHA(tb_text, 10));
-      pgf_draw_text(btn_rx + (btn_size - pgf_text_width("*")) / 2.0f, btn_bmk_y + 12, tb_text, "*");
+      if (button_fav) {
+        int fw = vita2d_texture_get_width(button_fav);
+        int fh = vita2d_texture_get_height(button_fav);
+        vita2d_draw_texture(button_fav, (float)(btn_rx + (btn_size - fw) / 2), (float)(btn_bmk_y + (btn_size - fh) / 2));
+      }
     }
+
+    // Update system dialogs (touch input processing)
+    vita2d_common_dialog_update();
 
     // Draw
     drawSettingsMenu();
@@ -2334,6 +2396,7 @@ COLOR_ALPHA(themeListBg(vitashell_config.theme_preset), 100) : themeListBg(vitas
     drawDeleteConfirmDialog();
     drawTouchConfirmDialog();
     drawFtpTouchDialog();
+    drawQrTouchDialog();
     drawAdhocDialog();
     drawPropertyDialog();
 

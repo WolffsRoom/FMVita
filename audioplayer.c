@@ -24,6 +24,7 @@
 #include "language.h"
 #include "utils.h"
 #include "audio/lrcparse.h"
+#include "audio/vita_audio.h"
 
 #include "audio/player.h"
 
@@ -199,6 +200,78 @@ void getAudioInfo(const char *file) {
     tex = getAlternativeCoverImage(file);
 }
 
+// ---- Visualizer ----
+#define VIZ_BARS 20
+#define VIZ_FFT_SIZE 512
+static float viz_bar_heights[VIZ_BARS];
+static float viz_bar_targets[VIZ_BARS];
+static float viz_falloff[VIZ_BARS];
+
+static void computeVisualizer() {
+  short *pcm = NULL;
+  int count = 0;
+  getVizPcmData(&pcm, &count);
+  if (!pcm || count < 64) return;
+
+  // Simple FFT-based magnitude computation
+  // Compute magnitudes for VIZ_BARS frequency bins using DFT-like approach
+  for (int bar = 0; bar < VIZ_BARS; bar++) {
+    float mag = 0.0f;
+    // Frequency range: each bar covers ~43 Hz
+    int bin_start = (bar * count) / (VIZ_BARS * 2);
+    int bin_end = ((bar + 1) * count) / (VIZ_BARS * 2);
+    if (bin_end > count / 2) bin_end = count / 2;
+    if (bin_start >= bin_end) bin_start = bin_end - 1;
+    if (bin_start < 0) bin_start = 0;
+
+    for (int b = bin_start; b < bin_end; b++) {
+      // Approximate magnitude using sum of absolute values in this band
+      int idx = b * 2;
+      float l = pcm[idx] / 32768.0f;
+      float r = pcm[idx + 1] / 32768.0f;
+      mag += sqrtf(l * l + r * r);
+    }
+    mag /= (bin_end - bin_start + 1);
+
+    // Scale and smooth
+    float target = mag * 120.0f;
+    if (target > 120.0f) target = 120.0f;
+    viz_bar_targets[bar] = target;
+
+    // Smooth rise, slow fall
+    if (target > viz_bar_heights[bar]) {
+      viz_bar_heights[bar] += (target - viz_bar_heights[bar]) * 0.4f;
+    } else {
+      viz_bar_heights[bar] += (target - viz_bar_heights[bar]) * 0.08f;
+    }
+    if (viz_bar_heights[bar] < 0) viz_bar_heights[bar] = 0;
+  }
+}
+
+static void drawVisualizer(float x, float y, float w, float h) {
+  float bar_w = w / (VIZ_BARS * 2 + 1);
+  int gap = bar_w;
+  float bw = bar_w;
+  if (bw < 2) bw = 2;
+
+  for (int i = 0; i < VIZ_BARS; i++) {
+    float bar_h = viz_bar_heights[i] * h / 120.0f;
+    if (bar_h < 1) bar_h = 1;
+    float bx = x + i * (bw + gap);
+
+    unsigned int color;
+    float pct = bar_h / h;
+    if (pct < 0.33f)
+      color = RGBA8(60, 200, 60, 200);
+    else if (pct < 0.66f)
+      color = RGBA8(200, 200, 50, 200);
+    else
+      color = RGBA8(220, 60, 60, 200);
+
+    vita2d_draw_rectangle(bx, y + h - bar_h, bw, bar_h, color);
+  }
+}
+
 int audioPlayer(const char *file, int type, FileList *list, FileListEntry *entry, int *base_pos, int *rel_pos) {
   static int speed_list[] = { -7, -3, -1, 0, 1, 3, 7 };
   #define N_SPEED (sizeof(speed_list) / sizeof(int))
@@ -208,6 +281,9 @@ int audioPlayer(const char *file, int type, FileList *list, FileListEntry *entry
   powerLock();
 
   setAudioFunctions(type);
+
+  // Enable PCM capture for visualizer
+  setVizPcmCapture(1);
 
   initFunct(0);
   loadFunct((char *)file);
@@ -425,10 +501,14 @@ int audioPlayer(const char *file, int type, FileList *list, FileListEntry *entry
     drawGifBackground();
 
     // Top bar hidden for cleaner music experience
-    // (drawShellInfo intentionally omitted)
 
-    // Cover
+    unsigned int accent = themeAccentColor(vitashell_config.theme_preset);
+    unsigned int card = COLOR_ALPHA(themeCardBg(vitashell_config.theme_preset), 160);
+    unsigned int topbar_text = themeTopbarText(vitashell_config.theme_preset);
+
+    // Cover with subtle border
     if (tex) {
+      vita2d_draw_rectangle(SHELL_MARGIN_X - 2, START_Y - 2, cover_size + 4, cover_size + 4, COLOR_ALPHA(accent, 40));
       vita2d_draw_texture_scale(tex, SHELL_MARGIN_X, START_Y, cover_size / vita2d_texture_get_width(tex), cover_size / vita2d_texture_get_height(tex));
     } else {
       vita2d_draw_texture(cover_image, SHELL_MARGIN_X, START_Y);
@@ -458,7 +538,7 @@ int audioPlayer(const char *file, int type, FileList *list, FileListEntry *entry
       } else if (scroll_count < width + 90) {
         scroll_x--;
       } else if (scroll_count < width + 120) {
-        color = (color & 0x00FFFFFF) | ((((color >> 24) * (scroll_count - width - 90)) / 30) << 24); // fade-in in 0.5s
+        color = (color & 0x00FFFFFF) | ((((color >> 24) * (scroll_count - width - 90)) / 30) << 24);
         scroll_x = title_x;
       } else {
         scroll_count = 0;
@@ -481,27 +561,33 @@ int audioPlayer(const char *file, int type, FileList *list, FileListEntry *entry
 
     drawLyrics(lyrics, cur_time_string, &totalms, &lyricsIndex, x, START_Y + (6 * FONT_Y_SPACE));
 
-    // Bottom toolbar (estilo do menu superior)
-    int ab_bgy = SCREEN_HEIGHT - 50;
-    vita2d_draw_rectangle(0, ab_bgy, SCREEN_WIDTH, 50, themeTopbarBg(vitashell_config.theme_preset));
-    vita2d_draw_rectangle(0, ab_bgy, SCREEN_WIDTH, 1, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 18));
+    // Compute and draw visualizer
+    computeVisualizer();
+    float viz_x = 2.0f * SHELL_MARGIN_X + cover_size;
+    float viz_y = START_Y + (5 * FONT_Y_SPACE) + 10;
+    float viz_w = SCREEN_WIDTH - viz_x - SHELL_MARGIN_X;
+    float viz_h = 70;
+    drawVisualizer(viz_x, viz_y, viz_w, viz_h);
 
-    int ab_btn_y = ab_bgy + 4, ab_btn_h = 42;
+    // Bottom toolbar
+    int ab_bgy = SCREEN_HEIGHT - 50;
+    int ab_toolbar_h = 50;
+    vita2d_draw_rectangle(0, ab_bgy, SCREEN_WIDTH, ab_toolbar_h, themeTopbarBg(vitashell_config.theme_preset));
+    vita2d_draw_rectangle(0, ab_bgy, SCREEN_WIDTH, 1, COLOR_ALPHA(topbar_text, 18));
+
+    int ab_btn_y = ab_bgy + 6, ab_btn_h = 38;
     int ab_btn_w = 100, ab_btn_gap = 10;
     int ab_total = 3 * ab_btn_w + 2 * ab_btn_gap;
     int ab_start = (SCREEN_WIDTH - ab_total) / 2;
 
     unsigned int ab_def = themeButtonDefault(vitashell_config.theme_preset);
-    unsigned int ab_acc = themeButtonAccent(vitashell_config.theme_preset);
-    unsigned int ab_dng = themeButtonDanger(vitashell_config.theme_preset);
-    unsigned int ab_card = COLOR_ALPHA(themeCardBg(vitashell_config.theme_preset), 160);
 
     // Prev button
     int prev_bx = ab_start;
-    vita2d_draw_rectangle(prev_bx, ab_btn_y, ab_btn_w, ab_btn_h, ab_card);
+    vita2d_draw_rectangle(prev_bx, ab_btn_y, ab_btn_w, ab_btn_h, card);
     vita2d_draw_rectangle(prev_bx, ab_btn_y, ab_btn_w, 2, ab_def);
-    vita2d_draw_rectangle(prev_bx, ab_btn_y+ab_btn_h-1, ab_btn_w, 1, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 8));
-    pgf_draw_text(prev_bx + (ab_btn_w - pgf_text_width("<<")) / 2.0f, ab_btn_y + 10, themeTopbarText(vitashell_config.theme_preset), "<<");
+    vita2d_draw_rectangle(prev_bx, ab_btn_y+ab_btn_h-1, ab_btn_w, 1, COLOR_ALPHA(topbar_text, 8));
+    pgf_draw_text(prev_bx + (ab_btn_w - pgf_text_width("<<")) / 2.0f, ab_btn_y + 8, topbar_text, "<<");
 
     // Play/Pause button
     int play_bx = ab_start + 1 * (ab_btn_w + ab_btn_gap);
@@ -511,9 +597,9 @@ int audioPlayer(const char *file, int type, FileList *list, FileListEntry *entry
     } else {
       ab_icon = isPlayingFunct() ? pause_image : play_image;
     }
-    vita2d_draw_rectangle(play_bx, ab_btn_y, ab_btn_w, ab_btn_h, ab_card);
-    vita2d_draw_rectangle(play_bx, ab_btn_y, ab_btn_w, 2, ab_acc);
-    vita2d_draw_rectangle(play_bx, ab_btn_y+ab_btn_h-1, ab_btn_w, 1, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 8));
+    vita2d_draw_rectangle(play_bx, ab_btn_y, ab_btn_w, ab_btn_h, card);
+    vita2d_draw_rectangle(play_bx, ab_btn_y, ab_btn_w, 2, accent);
+    vita2d_draw_rectangle(play_bx, ab_btn_y+ab_btn_h-1, ab_btn_w, 1, COLOR_ALPHA(topbar_text, 8));
     if (ab_icon) {
       float icon_x = play_bx + (ab_btn_w - vita2d_texture_get_width(ab_icon)) / 2.0f;
       float icon_y = ab_btn_y + (ab_btn_h - vita2d_texture_get_height(ab_icon)) / 2.0f;
@@ -522,38 +608,50 @@ int audioPlayer(const char *file, int type, FileList *list, FileListEntry *entry
 
     // Speed indicator
     if (getPlayingSpeedFunct() != 0) {
-      pgf_draw_textf(play_bx + ab_btn_w + 4, ab_btn_y + 12, AUDIO_SPEED, "%dx", abs(getPlayingSpeedFunct() + (getPlayingSpeedFunct() < 0 ? -1 : 1)));
+      pgf_draw_textf(play_bx + ab_btn_w + 4, ab_btn_y + 10, AUDIO_SPEED, "%dx", abs(getPlayingSpeedFunct() + (getPlayingSpeedFunct() < 0 ? -1 : 1)));
     }
 
     // Next button
     int next_bx = ab_start + 2 * (ab_btn_w + ab_btn_gap);
-    vita2d_draw_rectangle(next_bx, ab_btn_y, ab_btn_w, ab_btn_h, ab_card);
+    vita2d_draw_rectangle(next_bx, ab_btn_y, ab_btn_w, ab_btn_h, card);
     vita2d_draw_rectangle(next_bx, ab_btn_y, ab_btn_w, 2, ab_def);
-    vita2d_draw_rectangle(next_bx, ab_btn_y+ab_btn_h-1, ab_btn_w, 1, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 8));
-    pgf_draw_text(next_bx + (ab_btn_w - pgf_text_width(">>")) / 2.0f, ab_btn_y + 10, themeTopbarText(vitashell_config.theme_preset), ">>");
+    vita2d_draw_rectangle(next_bx, ab_btn_y+ab_btn_h-1, ab_btn_w, 1, COLOR_ALPHA(topbar_text, 8));
+    pgf_draw_text(next_bx + (ab_btn_w - pgf_text_width(">>")) / 2.0f, ab_btn_y + 8, topbar_text, ">>");
 
-    // Close button (Top Right) — estilo toolbar
+    // Close button (Top Right)
     int aud_close_w = 80, aud_close_h = 34;
     int aud_close_x = SCREEN_WIDTH - aud_close_w - 10;
     int aud_close_y = 10;
     unsigned int aud_close_col = themeButtonDanger(vitashell_config.theme_preset);
-    vita2d_draw_rectangle(aud_close_x, aud_close_y, aud_close_w, aud_close_h, COLOR_ALPHA(themeCardBg(vitashell_config.theme_preset), 160));
+    vita2d_draw_rectangle(aud_close_x, aud_close_y, aud_close_w, aud_close_h, card);
     vita2d_draw_rectangle(aud_close_x, aud_close_y, aud_close_w, 2, aud_close_col);
-    pgf_draw_text(aud_close_x + (aud_close_w - pgf_text_width(language_container[CLOSE_LABEL])) / 2.0f, aud_close_y + 8, themeTopbarText(vitashell_config.theme_preset), language_container[CLOSE_LABEL]);
+    pgf_draw_text(aud_close_x + (aud_close_w - pgf_text_width(language_container[CLOSE_LABEL])) / 2.0f, aud_close_y + 8, topbar_text, language_container[CLOSE_LABEL]);
 
-    // Time — posicionado acima da toolbar
-    float time_y = ab_bgy - FONT_Y_SPACE - 10;
-    char string[32];
-    sprintf(string, "%s / %s", cur_time_string, fileinfo->strLength);
-    float time_x = ALIGN_RIGHT(SCREEN_WIDTH-SHELL_MARGIN_X, pgf_text_width(string));
+    // Progress section: thicker bar with time labels at both ends
+    float prog_section_y = ab_bgy - FONT_Y_SPACE - 22;
+    float prog_bar_y = prog_section_y + FONT_Y_SPACE + 4;
+    float prog_bar_h = 12;
+    float prog_bar_x = 2.0f * SHELL_MARGIN_X + cover_size;
+    float prog_bar_w = SCREEN_WIDTH - 3.0f * SHELL_MARGIN_X - cover_size;
 
-    int w = pgf_draw_text(time_x, time_y, AUDIO_TIME_CURRENT, cur_time_string);
-    pgf_draw_text(time_x + (float)w, time_y, AUDIO_TIME_SLASH, " /");
-    pgf_draw_text(ALIGN_RIGHT(SCREEN_WIDTH-SHELL_MARGIN_X, pgf_text_width(fileinfo->strLength)), time_y, AUDIO_TIME_TOTAL, fileinfo->strLength);
+    // Current time at left end
+    char cur_t_str[12];
+    strcpy(cur_t_str, cur_time_string + 3); // skip HH:
+    pgf_draw_text(prog_bar_x, prog_section_y, AUDIO_TIME_CURRENT, cur_t_str);
 
-    float length = SCREEN_WIDTH - 3.0f * SHELL_MARGIN_X - cover_size;
-    vita2d_draw_rectangle(x, time_y + FONT_Y_SPACE + 6, length, 8, AUDIO_TIME_BAR_BG);
-    vita2d_draw_rectangle(x, time_y + FONT_Y_SPACE + 6, getPercentageFunct() * length / 100.0f, 8, AUDIO_TIME_BAR);
+    // Total time at right end
+    pgf_draw_text(ALIGN_RIGHT(prog_bar_x + prog_bar_w, pgf_text_width(fileinfo->strLength)), prog_section_y, AUDIO_TIME_TOTAL, fileinfo->strLength);
+
+    // Progress bar
+    vita2d_draw_rectangle(prog_bar_x, prog_bar_y, prog_bar_w, prog_bar_h, AUDIO_TIME_BAR_BG);
+    float pct_f = (float)getPercentageFunct() / 100.0f;
+    if (pct_f > 0) {
+      float fill_w = pct_f * prog_bar_w;
+      if (fill_w < 2) fill_w = 2;
+      vita2d_draw_rectangle(prog_bar_x, prog_bar_y, fill_w, prog_bar_h, AUDIO_TIME_BAR);
+      // Thumb indicator
+      vita2d_draw_rectangle(prog_bar_x + fill_w - 4, prog_bar_y - 2, 8, prog_bar_h + 4, accent);
+    }
 
     // End drawing
     endDrawing();
@@ -564,6 +662,8 @@ int audioPlayer(const char *file, int type, FileList *list, FileListEntry *entry
     vita2d_free_texture(tex);
     tex = NULL;
   }
+
+  setVizPcmCapture(0);
 
   lrcParseClose(lyrics);
   endFunct();

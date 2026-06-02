@@ -123,6 +123,10 @@ void vitaAudioSetChannelCallback(int channel, vitaAudioCallback callback, void *
 int vitaAudioInit(int priority);
 void vitaAudioShutdown(void);
 
+// PCM capture for visualizer
+void setVizPcmCapture(int enable);
+void getVizPcmData(short **buf, int *count);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus

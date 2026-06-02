@@ -29,6 +29,7 @@ enum UsbDeviceModes {
 enum SelectButtonModes {
   SELECT_BUTTON_MODE_USB,
   SELECT_BUTTON_MODE_FTP,
+  SELECT_BUTTON_MODE_QR,
 };
 
 typedef struct {

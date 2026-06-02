@@ -40,7 +40,7 @@ static SettingsMenuEntry *settings_menu_entries = NULL;
 static int n_settings_entries = 0;
 
 static char *usbdevice_options[4];
-static char *select_button_options[2];
+static char *select_button_options[3];
 static char *bg_anim_options[9];
 static char *view_mode_options[3];
 static char *theme_preset_options[7];
@@ -193,6 +193,8 @@ static void refreshSettingsLangStrings() {
 
   select_button_options[0] = language_container[VITASHELL_SETTINGS_SELECT_BUTTON_USB];
   select_button_options[1] = language_container[VITASHELL_SETTINGS_SELECT_BUTTON_FTP];
+  select_button_options[2] = language_container[VITASHELL_SETTINGS_SELECT_BUTTON_QR] ?
+    language_container[VITASHELL_SETTINGS_SELECT_BUTTON_QR] : "QR";
 
   bg_anim_options[0] = language_container[BG_ANIM_PARTICLES];
   bg_anim_options[1] = language_container[BG_ANIM_WAVES];

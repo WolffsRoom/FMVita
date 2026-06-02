@@ -6,6 +6,22 @@
 #include <malloc.h>
 #include "vita_audio.h"
 
+// PCM visualizer capture buffer (aliased to player.c)
+#define PCM_BUF_SIZE 512
+static short pcm_viz_buf[PCM_BUF_SIZE * 2];
+static int pcm_viz_count = 0;
+static int pcm_viz_enabled = 0;
+
+void setVizPcmCapture(int enable) {
+  pcm_viz_enabled = enable;
+  if (!enable) pcm_viz_count = 0;
+}
+
+void getVizPcmData(short **buf, int *count) {
+  *buf = pcm_viz_buf;
+  *count = pcm_viz_count;
+}
+
 static vitaWav vitaWavInfo[VITA_WAV_MAX_SLOTS];
 static int vitaWavPlaying[VITA_WAV_MAX_SLOTS];
 static int vitaWavId[VITA_WAV_MAX_SLOTS];
@@ -226,6 +242,9 @@ static void wavout_snd_callback(void *_buf, unsigned int _reqn, void *pdata)
 	vitaWavSamples = _buf;
 	vitaWavReq = _reqn;
 
+	// Capture PCM for visualizer
+	int capture_offset = 0;
+
 	for(i = 0; i < _reqn; i++)
 	{
 		int outr = 0, outl = 0;
@@ -297,7 +316,16 @@ static void wavout_snd_callback(void *_buf, unsigned int _reqn, void *pdata)
 
 		*(buf++) = outl;
 		*(buf++) = outr;
+
+		// Capture first PCM_VIZ_SIZE samples for visualizer
+		if (pcm_viz_enabled && capture_offset < PCM_BUF_SIZE) {
+			pcm_viz_buf[capture_offset * 2] = outl;
+			pcm_viz_buf[capture_offset * 2 + 1] = outr;
+			capture_offset++;
+		}
 	}
+
+	pcm_viz_count = capture_offset;
 }
 
 int vitaWavInit(void)

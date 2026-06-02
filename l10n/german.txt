@@ -151,7 +151,8 @@ VITASHELL_SETTINGS_STANDBY           = "Standby"
 VITASHELL_SETTINGS_USB_MEMORY_CARD   = "Memory Card"
 VITASHELL_SETTINGS_USB_GAME_CARD     = "Game Card"
 VITASHELL_SETTINGS_SELECT_BUTTON_USB = "USB"
-VITASHELL_SETTINGS_SELECT_BUTTON_FTP = "FTP"
+VITASHELL_SETTINGS_SELECT_BUTTON_FTP = "FTP"
+VITASHELL_SETTINGS_SELECT_BUTTON_QR = "QR"
 
 # USB Texte
 USB_CONNECTED                        = "USB verbunden"
@@ -175,3 +176,6 @@ FTP_SERVER                           = "FTP-Server läuft unter\ftp://%s:%i\\Dr�
 UPDATE_QUESTION                      = "VitaShell %s ist jetzt verfügbar.\\Möchtest du die Anwendung aktualisieren?"
 ARCHIVE_NAME                         = "Archiv Name"
 COMPRESSION_LEVEL                    = "Kompressionslevel (0-9)"
+PROTECTED_PATH                       = "Error: System folder is protected."
+RUN_APP_AFTER_INSTALL                = "Installation completed. Start the app/game now?"
+LAUNCH_APP_GAME                      = "Launch app/game"

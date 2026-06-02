@@ -100,10 +100,28 @@ int qr_thread(SceSize args, void *argp) {
   }
 }
 
+static void url_extract_filename(char *url, char *out, int out_size) {
+  char *p = url;
+  char *last = url;
+  while ((p = strpbrk(p, "\\/"))) {
+    last = p;
+    p++;
+  }
+  if (last != url) last++;
+  strncpy(out, last, out_size - 1);
+  out[out_size - 1] = '\0';
+}
+
 int qr_scan_thread(SceSize args, void *argp) {
   data = last_qr;
+  // Case-insensitive http check
   if (last_qr_len > 4) {
-    if (!(data[0] == 'h' && data[1] == 't' && data[2] == 't' && data[3] == 'p')) {
+    char http_check[5];
+    int i;
+    for (i = 0; i < 4; i++)
+      http_check[i] = (data[i] >= 'A' && data[i] <= 'Z') ? data[i] + 0x20 : data[i];
+    http_check[4] = '\0';
+    if (strcmp(http_check, "http") != 0) {
       initMessageDialog(SCE_MSG_DIALOG_BUTTON_TYPE_OK, language_container[QR_SHOW_CONTENTS], data);
       setDialogStep(DIALOG_STEP_QR_SHOW_CONTENTS);
       return sceKernelExitDeleteThread(0);
@@ -116,117 +134,112 @@ int qr_scan_thread(SceSize args, void *argp) {
   
   initMessageDialog(SCE_MSG_DIALOG_BUTTON_TYPE_NONE, language_container[PLEASE_WAIT]);
   
-  // check for attached file
   const char *headerData;
   unsigned int headerLen;
-  unsigned int fileNameLength = 0;
   int vpk = 0;
-  char *fileName = "";
-  uint64_t fileSize;
-  char sizeString[16];
+  char fileName[MAX_URL_LENGTH];
+  fileName[0] = '\0';
+  uint64_t fileSize = 0;
+  char sizeString[16] = "";
   int ret;
+  int has_file_info = 0;
 
   ret = getDownloadFileSize(data, &fileSize);
-  if (ret < 0)
-    goto NETWORK_FAILURE;
-
-  ret = getFieldFromHeader(data, "Content-Disposition", &headerData, &headerLen);
-  if (ret < 0)
-    goto NETWORK_FAILURE;
-
-  getSizeString(sizeString, fileSize);
-  sceMsgDialogClose();
-
-  // Wait for it to stop loading
-  while (isMessageDialogRunning()) {
-    sceKernelDelayThread(10 * 1000);
+  if (ret >= 0) {
+    getSizeString(sizeString, fileSize);
+    has_file_info = 1;
   }
 
-  if (headerLen <= 0) {
-    char *next;
-    fileName = data;
-    while ((next = strpbrk(fileName + 1, "\\/"))) fileName = next;
-    if (fileName != last_qr) fileName++;
-    
-    char *ext = strrchr(fileName, '.');
-    if (ext) {
-      vpk = getFileType(fileName) == FILE_TYPE_VPK;
-    } else {
-      initMessageDialog(SCE_MSG_DIALOG_BUTTON_TYPE_YESNO, language_container[QR_OPEN_WEBSITE], data);
-      setDialogStep(DIALOG_STEP_QR_OPEN_WEBSITE);
-      return sceKernelExitDeleteThread(0);
-    }
-  } else {
+  ret = getFieldFromHeader(data, "Content-Disposition", &headerData, &headerLen);
+  if (ret >= 0 && headerLen > 0) {
+    // Has Content-Disposition
     if (strstr(headerData, "inline") != NULL) {
-      initMessageDialog(SCE_MSG_DIALOG_BUTTON_TYPE_YESNO, language_container[QR_OPEN_WEBSITE], data);
-      setDialogStep(DIALOG_STEP_QR_OPEN_WEBSITE);
+      // inline → treat as website (but store URL for touch dialog)
+      sceMsgDialogClose();
+      while (isMessageDialogRunning())
+        sceKernelDelayThread(10 * 1000);
+
+      strncpy(qr_dialog_url, data, QR_DIALOG_URL_SIZE - 1);
+      qr_dialog_url[QR_DIALOG_URL_SIZE - 1] = '\0';
+      setDialogStep(DIALOG_STEP_QR_WEBSITE_TOUCH);
+      while (getDialogStep() == DIALOG_STEP_QR_WEBSITE_TOUCH)
+        sceKernelDelayThread(10 * 1000);
+      if (getDialogStep() != DIALOG_STEP_NONE)
+        goto EXIT;
       return sceKernelExitDeleteThread(0);
     }
 
     char *p = strstr(headerData, "filename=");
-    if (!p)
-      goto EXIT;
-
-    fileName = p+9;
-
-    p = strchr(fileName, '\n');
-    if (p)
-      *p = '\0';
-
-    // Trim at beginning
-    while (*fileName < 0x20 ||
-         *fileName == ' ' || *fileName == '\\' ||
-         *fileName == '/' || *fileName == ':' ||
-         *fileName == '*' || *fileName == '?' ||
-         *fileName == '"' || *fileName == '<' ||
-         *fileName == '>' || *fileName == '|') {
-      fileName++;
-    }
-
-    // Trim at end
-    int i;
-    for (i = strlen(fileName)-1; i >= 0; i--) {
-      if (fileName[i] < 0x20 ||
-        fileName[i] == ' ' || fileName[i] == '\\' ||
-        fileName[i] == '/' || fileName[i] == ':' ||
-        fileName[i] == '*' || fileName[i] == '?' ||
-        fileName[i] == '"' || fileName[i] == '<' ||
-        fileName[i] == '>' || fileName[i] == '|') {
-        fileName[i] = 0;
-      } else {
-        break;
+    if (p) {
+      char *fn = p + 9;
+      p = strchr(fn, '\n');
+      if (p) *p = '\0';
+      while (*fn < 0x20 || *fn == ' ' || *fn == '\\' || *fn == '/' ||
+             *fn == ':' || *fn == '*' || *fn == '?' || *fn == '"' ||
+             *fn == '<' || *fn == '>' || *fn == '|')
+        fn++;
+      int i;
+      for (i = strlen(fn) - 1; i >= 0; i--) {
+        if (fn[i] < 0x20 || fn[i] == ' ' || fn[i] == '\\' || fn[i] == '/' ||
+            fn[i] == ':' || fn[i] == '*' || fn[i] == '?' || fn[i] == '"' ||
+            fn[i] == '<' || fn[i] == '>' || fn[i] == '|')
+          fn[i] = 0;
+        else
+          break;
       }
+      strncpy(fileName, fn, sizeof(fileName) - 1);
+      fileName[sizeof(fileName) - 1] = '\0';
     }
-
-    // VPK type
-    vpk = getFileType(fileName) == FILE_TYPE_VPK;
+  } else {
+    // No Content-Disposition — try to extract filename from URL
+    url_extract_filename(data, fileName, sizeof(fileName));
   }
-  
-  if (vpk)
-    initMessageDialog(SCE_MSG_DIALOG_BUTTON_TYPE_YESNO, language_container[QR_CONFIRM_INSTALL], data, fileName, sizeString);
+
+  sceMsgDialogClose();
+  while (isMessageDialogRunning())
+    sceKernelDelayThread(10 * 1000);
+
+  // If no filename has an extension, treat as website
+  if (fileName[0] == '\0' || !strrchr(fileName, '.')) {
+    strncpy(qr_dialog_url, data, QR_DIALOG_URL_SIZE - 1);
+    qr_dialog_url[QR_DIALOG_URL_SIZE - 1] = '\0';
+    setDialogStep(DIALOG_STEP_QR_WEBSITE_TOUCH);
+    while (getDialogStep() == DIALOG_STEP_QR_WEBSITE_TOUCH)
+      sceKernelDelayThread(10 * 1000);
+    return sceKernelExitDeleteThread(0);
+  }
+
+  // Has a file extension — determine type
+  vpk = getFileType(fileName) == FILE_TYPE_VPK;
+
+  // Store info for touch dialog
+  strncpy(qr_dialog_url, data, QR_DIALOG_URL_SIZE - 1);
+  qr_dialog_url[QR_DIALOG_URL_SIZE - 1] = '\0';
+  strncpy(qr_dialog_filename, fileName, QR_DIALOG_FNAME_SIZE - 1);
+  qr_dialog_filename[QR_DIALOG_FNAME_SIZE - 1] = '\0';
+  if (has_file_info)
+    strncpy(qr_dialog_size, sizeString, sizeof(qr_dialog_size) - 1);
   else
-    initMessageDialog(SCE_MSG_DIALOG_BUTTON_TYPE_YESNO, language_container[QR_CONFIRM_DOWNLOAD], data, fileName, sizeString);
-  setDialogStep(DIALOG_STEP_QR_CONFIRM);
-  
-  // Wait for response
-  while (getDialogStep() == DIALOG_STEP_QR_CONFIRM) {
+    qr_dialog_size[0] = '\0';
+  qr_dialog_is_vpk = vpk;
+
+  setDialogStep(DIALOG_STEP_QR_CONFIRM_TOUCH);
+  while (getDialogStep() == DIALOG_STEP_QR_CONFIRM_TOUCH) {
     sceKernelDelayThread(10 * 1000);
   }
-  
-  // No
-  if (getDialogStep() == DIALOG_STEP_NONE) {
+
+  if (getDialogStep() == DIALOG_STEP_NONE)
     goto EXIT;
-  }
-  
-  // Yes
+
+  // Yes — start download
   char download_path[MAX_URL_LENGTH];
   char short_name[MAX_URL_LENGTH];
   int count = 0;
-  
+
   char *ext = strrchr(fileName, '.');
   if (ext) {
-    int len = ext-fileName;
-    if (len > sizeof(short_name) - 1)
+    int len = ext - fileName;
+    if (len > (int)sizeof(short_name) - 1)
       len = sizeof(short_name) - 1;
     strncpy(short_name, fileName, len);
     short_name[len] = '\0';
@@ -234,6 +247,7 @@ int qr_scan_thread(SceSize args, void *argp) {
     strncpy(short_name, fileName, sizeof(short_name) - 1);
     ext = "";
   }
+
   while (1) {
     if (count == 0)
       snprintf(download_path, sizeof(download_path) - 1, "ux0:download/%s", fileName);
@@ -246,26 +260,16 @@ int qr_scan_thread(SceSize args, void *argp) {
       break;
     count++;
   }
-  
+
   sceIoMkdir("ux0:download", 0006);
-  
   strcpy(last_download, download_path);
+
   if (vpk)
     return downloadFileProcess(data, download_path, DIALOG_STEP_QR_DOWNLOADED_VPK);
   else
     return downloadFileProcess(data, download_path, DIALOG_STEP_QR_DOWNLOADED);
 
 EXIT:
-  return sceKernelExitDeleteThread(0);
-
-NETWORK_FAILURE:
-  sceMsgDialogClose();
-  while (isMessageDialogRunning()) {
-    sceKernelDelayThread(10 * 1000);
-  }
-
-  initMessageDialog(SCE_MSG_DIALOG_BUTTON_TYPE_YESNO, language_container[QR_OPEN_WEBSITE], data);
-  setDialogStep(DIALOG_STEP_QR_OPEN_WEBSITE);
   return sceKernelExitDeleteThread(0);
 }
 
