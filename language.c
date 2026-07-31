@@ -355,14 +355,20 @@ void loadLanguage(int id) {
   readConfigBuffer(&_binary_resources_english_us_txt_start, (int)&_binary_resources_english_us_txt_size,
                    language_entries, sizeof(language_entries) / sizeof(ConfigEntry));
 
-  // Load bundled language file from app0:
+  // Load bundled language file. Prefer app0:; if that mount can't read the
+  // file (some builds/firmwares fail on app0: subdirectories), fall back to the
+  // physical install path under ux0:app/<titleid>/.
   if (id >= 0 && id < (sizeof(lang) / sizeof(char *))) {
     char path[MAX_PATH_LENGTH];
     snprintf(path, MAX_PATH_LENGTH, "app0:l10n/%s.txt", lang[id]);
-    readConfig(path, language_entries, sizeof(language_entries) / sizeof(ConfigEntry));
+    int r = readConfig(path, language_entries, sizeof(language_entries) / sizeof(ConfigEntry));
+    if (r < 0) {
+      snprintf(path, MAX_PATH_LENGTH, "ux0:app/FILEMNGR1/l10n/%s.txt", lang[id]);
+      readConfig(path, language_entries, sizeof(language_entries) / sizeof(ConfigEntry));
+    }
   }
 
-  // Load custom config file from ux0:
+  // Load optional user override from ux0:
   if (use_custom_config) {
     if (id >= 0 && id < (sizeof(lang) / sizeof(char *))) {
       char path[MAX_PATH_LENGTH];

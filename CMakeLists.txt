@@ -14,7 +14,7 @@ project(FileManager)
 include("${VITASDK}/share/vita.cmake" REQUIRED)
 set(VITA_APP_NAME "FileManager")
 set(VITA_TITLEID  "FILEMNGR1")
-set(VITA_VERSION  "05.00")
+set(VITA_VERSION  "06.00")
 
 # Flags and includes
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu11 -Wl,-q -Wall -Os -Wno-unused-variable -Wno-unused-but-set-variable -Wno-format-truncation -fno-lto")
@@ -228,7 +228,26 @@ vita_create_vpk(FileManager.vpk ${VITA_TITLEID} eboot.bin
        pkg/sce_sys/livearea/contents/bg0.png sce_sys/livearea/contents/bg0.png
        pkg/sce_sys/livearea/contents/default_gate.png sce_sys/livearea/contents/default_gate.png
        pkg/sce_sys/livearea/contents/template.xml sce_sys/livearea/contents/template.xml
-       l10n l10n
+       l10n/bulgarian.txt l10n/bulgarian.txt
+       l10n/chinese_s.txt l10n/chinese_s.txt
+       l10n/chinese_t.txt l10n/chinese_t.txt
+       l10n/danish.txt l10n/danish.txt
+       l10n/dutch.txt l10n/dutch.txt
+       l10n/french.txt l10n/french.txt
+       l10n/german.txt l10n/german.txt
+       l10n/greeklish.txt l10n/greeklish.txt
+       l10n/hungarian.txt l10n/hungarian.txt
+       l10n/italian.txt l10n/italian.txt
+       l10n/japanese.txt l10n/japanese.txt
+       l10n/korean.txt l10n/korean.txt
+       l10n/norwegian.txt l10n/norwegian.txt
+       l10n/polish.txt l10n/polish.txt
+       l10n/portuguese.txt l10n/portuguese.txt
+       l10n/portuguese_br.txt l10n/portuguese_br.txt
+       l10n/russian.txt l10n/russian.txt
+       l10n/spanish.txt l10n/spanish.txt
+       l10n/swedish.txt l10n/swedish.txt
+       l10n/turkish.txt l10n/turkish.txt
        Theme/GIF/theme.gif Theme/GIF/theme.gif
        Theme/GIF/theme.png Theme/GIF/theme.png
 )

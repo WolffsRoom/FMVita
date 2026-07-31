@@ -639,8 +639,8 @@ int textViewer(const char *file) {
           }
           s->copy_reset = 1;
         } else if (hold_pad[PAD_DOWN] || hold2_pad[PAD_LEFT_ANALOG_DOWN]) {
-          if (s->offset_list[s->rel_pos + 1] < s->size) {
-            if ((s->rel_pos + 1) < MAX_POSITION) {
+          if (s->offset_list[s->base_pos + s->rel_pos + 1] < s->size) {
+            if ((s->rel_pos + 1) < MAX_ENTRIES) {
               if (s->base_pos + s->rel_pos < s->n_lines - 1) 
                 s->rel_pos++;
             } else {
@@ -742,9 +742,9 @@ int textViewer(const char *file) {
               }
             } else { // Skip page down
               s->base_pos = s->base_pos + MAX_ENTRIES;
-              if (s->base_pos >= s->n_lines - MAX_POSITION) {
-                s->base_pos = MAX(s->n_lines - MAX_POSITION, 0);
-                s->rel_pos = MIN(MAX_POSITION - 1, s->n_lines - 1);
+              if (s->base_pos >= s->n_lines - MAX_ENTRIES) {
+                s->base_pos = MAX(s->n_lines - MAX_ENTRIES, 0);
+                s->rel_pos = MIN(MAX_ENTRIES - 1, s->n_lines - 1);
               }
             }
 

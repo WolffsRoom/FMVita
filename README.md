@@ -3,7 +3,7 @@
   <h1>FMVita</h1>
   <h3>File Manager Vita</h3>
   <p>
-    <img src="https://img.shields.io/badge/version-0.5.0-blue?style=flat-square" alt="Version">
+    <img src="https://img.shields.io/badge/version-0.6.0-blue?style=flat-square" alt="Version">
     <img src="https://img.shields.io/badge/platform-PS%20Vita-blueviolet?style=flat-square" alt="Platform">
     <img src="https://img.shields.io/badge/license-GPLv3-green?style=flat-square" alt="License">
   </p>

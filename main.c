@@ -437,26 +437,29 @@ void drawShellInfo(const char *path) {
     unsigned int t_amber = (vitashell_config.theme_preset == THEME_PRESET_LIGHT) ? RGBA8(200,140,30,220) : RGBA8(230,160,40,220);
     unsigned int ab_colors[9] = {is_root?ab_disabled:t_amber, is_root?ab_disabled:t_btn_acc, is_root?ab_disabled:t_btn_suc, is_root?ab_disabled:t_btn_dng, is_root?ab_disabled:t_gold, (filter_mode>0)?t_orange:t_purple, t_teal, search_active?t_btn_suc:t_btn_def, t_newg};
 
-    char search_lbl[16];
-    int n = 9, bw = 93, gap = 5;
+    char search_lbl[32];
+    // "New" (index 8) removed from the toolbar; "Search" (index 7) takes the
+    // freed space and spans a double-width slot.
+    int n = 8, bw = 93, gap = 5;
 
     for (int bi = 0; bi < n; bi++) {
       int bx = 10 + bi * (bw + gap);
+      int cur_bw = (bi == 7) ? (2 * bw + gap) : bw;  // Search is double width
       int disabled = (is_root && bi < 5);
 
       int active = (bi == toolbar_press_btn || bi == toolbar_hover_btn);
       if (!disabled) {
         if (active) {
-          vita2d_draw_rectangle(bx, aby, bw, abh, COLOR_ALPHA(ab_colors[bi], 200));
-          vita2d_draw_rectangle(bx, aby, bw, 2, RGBA8(255,255,255,60));
+          vita2d_draw_rectangle(bx, aby, cur_bw, abh, COLOR_ALPHA(ab_colors[bi], 200));
+          vita2d_draw_rectangle(bx, aby, cur_bw, 2, RGBA8(255,255,255,60));
         } else {
-          vita2d_draw_rectangle(bx, aby, bw, abh, COLOR_ALPHA(themeCardBg(vitashell_config.theme_preset), 160));
-          vita2d_draw_rectangle(bx, aby, bw, 2, ab_colors[bi]);
-          vita2d_draw_rectangle(bx, aby+abh-1, bw, 1, COLOR_ALPHA(t_txt, 8));
+          vita2d_draw_rectangle(bx, aby, cur_bw, abh, COLOR_ALPHA(themeCardBg(vitashell_config.theme_preset), 160));
+          vita2d_draw_rectangle(bx, aby, cur_bw, 2, ab_colors[bi]);
+          vita2d_draw_rectangle(bx, aby+abh-1, cur_bw, 1, COLOR_ALPHA(t_txt, 8));
         }
       } else {
-        vita2d_draw_rectangle(bx, aby, bw, abh, COLOR_ALPHA(themeTextDim(vitashell_config.theme_preset), 30));
-        vita2d_draw_rectangle(bx, aby, bw, 1, COLOR_ALPHA(t_txt, 5));
+        vita2d_draw_rectangle(bx, aby, cur_bw, abh, COLOR_ALPHA(themeTextDim(vitashell_config.theme_preset), 30));
+        vita2d_draw_rectangle(bx, aby, cur_bw, 1, COLOR_ALPHA(t_txt, 5));
       }
 
       const char *lbl = ab_labels[bi];
@@ -464,15 +467,17 @@ void drawShellInfo(const char *path) {
         const char *fm[] = {language_container[FILTER_ALL], language_container[FILTER_FOLDERS], language_container[FILTER_FILES]};
         lbl = fm[filter_mode];
       } else if (bi == 6) {
-        lbl = (sort_mode == SORT_BY_NAME) ? language_container[BY_NAME] : language_container[BY_SIZE];
+        lbl = (sort_mode == SORT_BY_NAME) ? language_container[BY_NAME] :
+              (sort_mode == SORT_BY_SIZE) ? language_container[BY_SIZE] :
+                                            language_container[BY_DATE];
       } else if (bi == 7 && search_active) {
-        snprintf(search_lbl, sizeof(search_lbl), "%.11s...", search_term);
-        if (strlen(search_term) <= 11) lbl = search_term;
+        snprintf(search_lbl, sizeof(search_lbl), "%.24s...", search_term);
+        if (strlen(search_term) <= 24) lbl = search_term;
         else lbl = search_lbl;
       }
       unsigned int tc = disabled ? COLOR_ALPHA(themeTextDim(vitashell_config.theme_preset), 120) : themeTextColor(vitashell_config.theme_preset);
       float lw = pgf_text_width(lbl);
-      pgf_draw_text(bx + (bw - lw)/2.0f, aby+8, tc, lbl);
+      pgf_draw_text(bx + (cur_bw - lw)/2.0f, aby+8, tc, lbl);
     }
   }
 

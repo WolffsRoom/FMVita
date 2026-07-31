@@ -386,6 +386,59 @@ void setFocusOnFilename(const char *name) {
   }
 }
 
+// Extensions treated as text for content search
+static int isTextExtension(const char *name) {
+  const char *ext = strrchr(name, '.');
+  if (!ext) return 0;
+  static const char *exts[] = {
+    ".txt", ".log", ".ini", ".cfg", ".conf", ".xml", ".md", ".json",
+    ".lua", ".c", ".h", ".cpp", ".hpp", ".sh", ".yml", ".yaml", ".csv",
+    ".html", ".htm", ".js", ".py", ".skprx", ".suprx", NULL
+  };
+  for (int i = 0; exts[i]; i++)
+    if (strcasecmp(ext, exts[i]) == 0) return 1;
+  return 0;
+}
+
+// Case-insensitive search for `term` inside a file's content (text files only,
+// capped in size). Reads in chunks with an overlap so matches spanning chunk
+// boundaries are still found.
+static int fileContainsText(const char *path, const char *term) {
+  int tlen = strlen(term);
+  if (tlen <= 0) return 0;
+
+  SceUID fd = sceIoOpen(path, SCE_O_RDONLY, 0);
+  if (fd < 0) return 0;
+
+  #define SEARCH_CHUNK 8192
+  #define SEARCH_MAX_BYTES (2 * 1024 * 1024)
+  char buf[SEARCH_CHUNK + 1];
+  int overlap = tlen - 1;
+  if (overlap > SEARCH_CHUNK) overlap = 0;
+  int carry = 0, total = 0, found = 0;
+
+  while (total < SEARCH_MAX_BYTES) {
+    int r = sceIoRead(fd, buf + carry, SEARCH_CHUNK - carry);
+    if (r <= 0) break;
+    int len = carry + r;
+    buf[len] = '\0';
+    // Text files shouldn't contain NULs; neutralize any so strcasestr scans all.
+    for (int i = 0; i < len; i++)
+      if (buf[i] == '\0') buf[i] = ' ';
+    if (strcasestr(buf, term)) { found = 1; break; }
+    if (overlap > 0 && len >= overlap) {
+      memmove(buf, buf + len - overlap, overlap);
+      carry = overlap;
+    } else {
+      carry = 0;
+    }
+    total += r;
+  }
+
+  sceIoClose(fd);
+  return found;
+}
+
 int refreshFileList() {
   int ret = 0, res = 0;
 
@@ -458,15 +511,22 @@ int refreshFileList() {
     }
   }
 
-  // Apply search filter if active
+  // Apply search filter if active. Matches by file name, and additionally by
+  // the text content of text files in the current (non-archive) directory.
   if (search_active && search_term[0] != '\0') {
+    int can_scan_content = !isInArchive();
     FileListEntry *entry = file_list.head;
     while (entry) {
       FileListEntry *next = entry->next;
       if (strcmp(entry->name, DIR_UP) != 0) {
-        if (strcasestr(entry->name, search_term) == NULL) {
-          fileListRemoveEntry(&file_list, entry);
+        int keep = (strcasestr(entry->name, search_term) != NULL);
+        if (!keep && can_scan_content && !entry->is_folder && isTextExtension(entry->name)) {
+          char full[MAX_PATH_LENGTH];
+          snprintf(full, sizeof(full), "%s%s", file_list.path, entry->name);
+          keep = fileContainsText(full, search_term);
         }
+        if (!keep)
+          fileListRemoveEntry(&file_list, entry);
       }
       entry = next;
     }
@@ -1262,10 +1322,10 @@ int browserMain() {
               filter_mode = (filter_mode + 1) % 3;
               refreshFileList();
             } else if (mx >= 596 && mx < 694) {
-              sort_mode = (sort_mode % 2) + 1;
+              sort_mode = (sort_mode % 3) + 1;
               last_set_sort_mode = sort_mode;
               refreshFileList();
-            } else if (mx >= 694 && mx < 792) {
+            } else if (mx >= 694 && mx < 890) { // Search (double width; New removed)
               if (search_active) {
                 search_active = 0;
                 search_term[0] = '\0';
@@ -1274,12 +1334,6 @@ int browserMain() {
                 initImeDialog(language_container[SEARCH], "", 255, SCE_IME_TYPE_DEFAULT, 0, 0);
                 setDialogStep(DIALOG_STEP_SEARCH);
               }
-            } else if (mx >= 792 && mx < 890) {
-              if (dir_level > 0) {
-                setContextMenu(&context_menu_new);
-                setContextMenuNewVisibilities();
-                setContextMenuMode(CONTEXT_MENU_OPENING);
-              }
             }
           }
           pressed_pad[PAD_ENTER] = 0;
@@ -1287,7 +1341,7 @@ int browserMain() {
           // Floating buttons (bottom-right)
           int btn_size = 48, btn_gap = 12;
           int btn_rx = SCREEN_WIDTH - 20 - btn_size;
-          int btn_plus_y = SCREEN_HEIGHT - 20 - btn_size;
+          int btn_plus_y = SCREEN_HEIGHT - STATUSBAR_H - 12 - btn_size;
           int btn_bmk_y = btn_plus_y - btn_size - btn_gap;
           if (mx >= btn_rx && mx < btn_rx + btn_size && my >= btn_plus_y && my < btn_plus_y + btn_size) {
             if (dir_level > 0) {
@@ -1404,15 +1458,14 @@ int browserMain() {
                         else if (tx >= 400 && tx < 498) toolbar_press_btn = 4;
                         else if (tx >= 498 && tx < 596) toolbar_press_btn = 5;
                         else if (tx >= 596 && tx < 694) toolbar_press_btn = 6;
-                        else if (tx >= 694 && tx < 792) toolbar_press_btn = 7;
-                        else if (tx >= 792 && tx < 890) toolbar_press_btn = 8;
+                        else if (tx >= 694 && tx < 890) toolbar_press_btn = 7; // Search (double width; New removed)
                         toolbar_hover_btn = toolbar_press_btn;
                     }
                 }
                 // Floating action buttons (bottom-right) — immediate on press
                 { int btn_size = 48, btn_gap = 12;
                   int btn_rx = SCREEN_WIDTH - 20 - btn_size;
-                  int btn_plus_y = SCREEN_HEIGHT - 20 - btn_size;
+                  int btn_plus_y = SCREEN_HEIGHT - STATUSBAR_H - 12 - btn_size;
                   int btn_bmk_y = btn_plus_y - btn_size - btn_gap;
                   if (!touch_handled && tx >= btn_rx && tx < btn_rx + btn_size && ty >= btn_plus_y && ty < btn_plus_y + btn_size) {
                       touch_handled = 1;
@@ -1595,10 +1648,10 @@ skip_touch_processing:
                                    filter_mode = (filter_mode + 1) % 3;
                                    refreshFileList();
                                 } else if (tx >= 596 && tx < 694) { // Agrupar
-                                    sort_mode = (sort_mode % 2) + 1;
+                                    sort_mode = (sort_mode % 3) + 1;
                                     last_set_sort_mode = sort_mode;
                                     refreshFileList();
-                                } else if (tx >= 694 && tx < 792) { // Buscar
+                                } else if (tx >= 694 && tx < 890) { // Buscar (largura dupla; Novo removido)
                                     if (search_active) {
                                         search_active = 0;
                                         search_term[0] = '\0';
@@ -1607,19 +1660,13 @@ skip_touch_processing:
                                          initImeDialog(language_container[SEARCH], "", 255, SCE_IME_TYPE_DEFAULT, 0, 0);
                                          setDialogStep(DIALOG_STEP_SEARCH);
                                      }
-                                } else if (tx >= 792 && tx < 890) { // Novo
-                                    if (dir_level > 0) {
-                                        setContextMenu(&context_menu_new);
-                                        setContextMenuNewVisibilities();
-                                        setContextMenuMode(CONTEXT_MENU_OPENING);
-                                    }
                                 }
                            }
                       } else if (touch_y_last > top_bar_boundary - 4) {
                          // Check floating action buttons (bottom-right) before file list
                          int btn_size = 48, btn_gap = 12;
                          int btn_rx = SCREEN_WIDTH - 20 - btn_size;
-                         int btn_plus_y = SCREEN_HEIGHT - 20 - btn_size;
+                         int btn_plus_y = SCREEN_HEIGHT - STATUSBAR_H - 12 - btn_size;
                          int btn_bmk_y = btn_plus_y - btn_size - btn_gap;
                          int tx = touch_x_last, ty = touch_y_last;
  
@@ -1725,10 +1772,9 @@ skip_touch_processing:
                      case 3: if (dir_level > 0) contextMenuMainEnterCallback(MENU_MAIN_ENTRY_DELETE, NULL); break;
                      case 4: if (dir_level > 0) contextMenuMainEnterCallback(MENU_MAIN_ENTRY_RENAME, NULL); break;
                      case 5: filter_mode = (filter_mode + 1) % 3; refreshFileList(); break;
-                     case 6: sort_mode = (sort_mode % 2) + 1; last_set_sort_mode = sort_mode; refreshFileList(); break;
+                     case 6: sort_mode = (sort_mode % 3) + 1; last_set_sort_mode = sort_mode; refreshFileList(); break;
                      case 7: if (search_active) { search_active = 0; search_term[0] = '\0'; refreshFileList(); }
                              else { initImeDialog(language_container[SEARCH], "", 255, SCE_IME_TYPE_DEFAULT, 0, 0); setDialogStep(DIALOG_STEP_SEARCH); } break;
-                     case 8: if (dir_level > 0) { setContextMenu(&context_menu_new); setContextMenuNewVisibilities(); setContextMenuMode(CONTEXT_MENU_OPENING); } break;
                    }
                    toolbar_press_btn = -1;
                  }
@@ -2077,8 +2123,7 @@ FONT_Y_SPACE) - (MAX_ENTRIES * FONT_Y_SPACE);
         else if (mx >= 400 && mx < 498) toolbar_hover_btn = 4;
         else if (mx >= 498 && mx < 596) toolbar_hover_btn = 5;
         else if (mx >= 596 && mx < 694) toolbar_hover_btn = 6;
-        else if (mx >= 694 && mx < 792) toolbar_hover_btn = 7;
-        else if (mx >= 792 && mx < 890) toolbar_hover_btn = 8;
+        else if (mx >= 694 && mx < 890) toolbar_hover_btn = 7; // Search (double width; New removed)
       }
     }
 
@@ -2128,6 +2173,9 @@ FONT_Y_SPACE) - (MAX_ENTRIES * FONT_Y_SPACE);
             gp_target++;
             temp = temp->next;
         }
+        // If the reference folder isn't found, show from the top instead of
+        // scrolling to the end of the column.
+        if (!temp) gp_target = 0;
         int gp_start = (gp_target > 5) ? gp_target - 5 : 0;
         for (int skip = 0; skip < gp_start && gp_entry; skip++) gp_entry = gp_entry->next;
         
@@ -2148,9 +2196,9 @@ FONT_Y_SPACE) - (MAX_ENTRIES * FONT_Y_SPACE);
             if (slash) snprintf(curr_folder, 256, "%s", slash + 1);
 
             if (strcmp(gp_entry->name, curr_folder) == 0) {
-                vita2d_draw_rectangle(SHELL_MARGIN_X - 10, p_y + 1.0f, 290.0f, FONT_Y_SPACE - 2.0f, RGBA8(255, 200, 50, 30));
-                vita2d_draw_rectangle(SHELL_MARGIN_X - 10, p_y + 1.0f, 4, FONT_Y_SPACE - 2.0f, RGBA8(255, 200, 50, 180));
-                p_color = RGBA8(255, 220, 100, 220);
+                vita2d_draw_rectangle(SHELL_MARGIN_X - 10, p_y + 1.0f, 290.0f, FONT_Y_SPACE - 2.0f, RGBA8(255, 200, 50, 70));
+                vita2d_draw_rectangle(SHELL_MARGIN_X - 10, p_y + 1.0f, 5, FONT_Y_SPACE - 2.0f, RGBA8(255, 200, 50, 235));
+                p_color = RGBA8(255, 235, 150, 255);
             }
             if (p_icon) vita2d_draw_texture(p_icon, SHELL_MARGIN_X, p_y + 10.0f);
             vita2d_enable_clipping();
@@ -2181,6 +2229,9 @@ FONT_Y_SPACE) - (MAX_ENTRIES * FONT_Y_SPACE);
             p_target++;
             temp2 = temp2->next;
         }
+        // If the open folder isn't found in the parent list, don't scroll the
+        // column to its end (which would lose the reference); show from the top.
+        if (!temp2) p_target = 0;
         int p_start = (p_target > 5) ? p_target - 5 : 0;
         for (int skip = 0; skip < p_start && p_entry; skip++) p_entry = p_entry->next;
         
@@ -2204,9 +2255,9 @@ FONT_Y_SPACE) - (MAX_ENTRIES * FONT_Y_SPACE);
             float ox = (num_columns == 3) ? (SHELL_MARGIN_X + 300.0f) : SHELL_MARGIN_X;
             float col_w = (vitashell_config.view_mode == 2) ? 455.0f : 290.0f;
             if (strcmp(p_entry->name, curr_folder) == 0) {
-                vita2d_draw_rectangle(ox - 10, p_y + 1.0f, col_w, FONT_Y_SPACE - 2.0f, RGBA8(255, 200, 50, 40));
-                vita2d_draw_rectangle(ox - 10, p_y + 1.0f, 4, FONT_Y_SPACE - 2.0f, RGBA8(255, 200, 50, 200));
-                p_color = RGBA8(255, 220, 100, 240);
+                vita2d_draw_rectangle(ox - 10, p_y + 1.0f, col_w, FONT_Y_SPACE - 2.0f, RGBA8(255, 200, 50, 90));
+                vita2d_draw_rectangle(ox - 10, p_y + 1.0f, 5, FONT_Y_SPACE - 2.0f, RGBA8(255, 200, 50, 255));
+                p_color = RGBA8(255, 235, 150, 255);
             }
             if (p_icon) vita2d_draw_texture(p_icon, ox, p_y + 10.0f);
             vita2d_enable_clipping();

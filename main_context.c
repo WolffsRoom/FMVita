@@ -124,11 +124,13 @@ MenuEntry menu_main_entries[] = {
 enum MenuSortEntrys {
   MENU_SORT_ENTRY_BY_NAME,
   MENU_SORT_ENTRY_BY_SIZE,
+  MENU_SORT_ENTRY_BY_DATE,
 };
 
 MenuEntry menu_sort_entries[] = {
-  { BY_NAME, 9, 0, CTX_INVISIBLE },
+  { BY_NAME, 9,  0, CTX_INVISIBLE },
   { BY_SIZE, 10, 0, CTX_INVISIBLE },
+  { BY_DATE, 11, 0, CTX_INVISIBLE },
 };
 
 #define N_MENU_SORT_ENTRIES (sizeof(menu_sort_entries) / sizeof(MenuEntry))
@@ -579,6 +581,8 @@ void setContextMenuSortVisibilities() {
     menu_sort_entries[MENU_SORT_ENTRY_BY_NAME].visibility = CTX_INVISIBLE;
   else if (sort_mode == SORT_BY_SIZE)
     menu_sort_entries[MENU_SORT_ENTRY_BY_SIZE].visibility = CTX_INVISIBLE;
+  else if (sort_mode == SORT_BY_DATE)
+    menu_sort_entries[MENU_SORT_ENTRY_BY_DATE].visibility = CTX_INVISIBLE;
 
   // Go to first entry
   for (i = 0; i < N_MENU_SORT_ENTRIES; i++) {
@@ -1162,6 +1166,10 @@ int contextMenuSortEnterCallback(int sel, void *context) {
 
     case MENU_SORT_ENTRY_BY_SIZE:
       sort_mode = SORT_BY_SIZE;
+      break;
+
+    case MENU_SORT_ENTRY_BY_DATE:
+      sort_mode = SORT_BY_DATE;
       break;
   }
 

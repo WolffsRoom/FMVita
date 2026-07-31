@@ -97,13 +97,24 @@ void drawContextMenu() {
     if (ctx->parent)
       ctx = ctx->parent;
 
-    float menu_width = ctx_cur_menu_width + 24.0f;
-    float menu_height = ctx->n_entries * FONT_Y_SPACE + 16;
+    // Count only VISIBLE entries so the menu packs them contiguously.
+    // (Fixed .pos slots + invisible gaps used to push entries off-screen.)
+    int j, parent_visible = 0, sub_visible = 0;
+    for (j = 0; j < ctx->n_entries; j++)
+      if (ctx->entries[j].visibility == CTX_VISIBLE) parent_visible++;
     if (cur_ctx->parent) {
-      menu_height = MAX(cur_ctx->parent->n_entries, cur_ctx->n_entries) * FONT_Y_SPACE + 16;
+      for (j = 0; j < cur_ctx->n_entries; j++)
+        if (cur_ctx->entries[j].visibility == CTX_VISIBLE) sub_visible++;
     }
+    int rows = parent_visible;
+    if (cur_ctx->parent)
+      rows = MAX(parent_visible, sub_visible);
+
+    float menu_width = ctx_cur_menu_width + 24.0f;
+    float menu_height = rows * FONT_Y_SPACE + 16;
     float start_x = SCREEN_WIDTH - menu_width;
     float start_y = (SCREEN_HEIGHT - menu_height) / 2.0f;
+    if (start_y < 2.0f) start_y = 2.0f;
 
     // Card shadow
     vita2d_draw_rectangle(start_x + 4, start_y + 4, menu_width, menu_height, RGBA8(0, 0, 0, (int)(100 * menu_alpha_ratio)));
@@ -118,8 +129,11 @@ void drawContextMenu() {
     vita2d_draw_rectangle(start_x + menu_width - 1, start_y, 1, menu_height, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), (int)(10 * menu_alpha_ratio)));
 
     int i;
+    int row = 0;
     for (i = 0; i < ctx->n_entries; i++) {
-      float y = start_y + 8 + (ctx->entries[i].pos * FONT_Y_SPACE);
+      if (ctx->entries[i].visibility == CTX_INVISIBLE) continue;
+      float y = start_y + 8 + (row * FONT_Y_SPACE);
+      row++;
 
       uint32_t color = COLOR_ALPHA(themeTextColor(vitashell_config.theme_preset), (text_alpha > 255) ? 255 : text_alpha);
       uint32_t bullet = COLOR_ALPHA(themeAccentColor(vitashell_config.theme_preset), (int)(120 * menu_alpha_ratio));
@@ -146,8 +160,6 @@ void drawContextMenu() {
         }
       }
 
-      if (ctx->entries[i].visibility == CTX_INVISIBLE) continue;
-
       // Colored bullet indicator
       vita2d_draw_fill_circle(start_x + 9, y + FONT_Y_SPACE / 2.0f - 6, 3.5f, bullet);
       pgf_draw_text(start_x + 20, y, color, language_container[ctx->entries[i].name]);
@@ -164,10 +176,13 @@ void drawContextMenu() {
         ctx_menu_mode == CONTEXT_MENU_MORE_OPENED ||
         ctx_menu_mode == CONTEXT_MENU_MORE_OPENING) {
       // Separator line
-      vita2d_draw_rectangle(start_x + cur_ctx->parent->max_width + 22, start_y + 8, 1, cur_ctx->n_entries * FONT_Y_SPACE, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), (int)(15 * menu_alpha_ratio)));
+      vita2d_draw_rectangle(start_x + cur_ctx->parent->max_width + 22, start_y + 8, 1, sub_visible * FONT_Y_SPACE, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), (int)(15 * menu_alpha_ratio)));
 
+      int sub_row = 0;
       for (i = 0; i < cur_ctx->n_entries; i++) {
-        float y = start_y + 8 + (cur_ctx->entries[i].pos * FONT_Y_SPACE);
+        if (cur_ctx->entries[i].visibility == CTX_INVISIBLE) continue;
+        float y = start_y + 8 + (sub_row * FONT_Y_SPACE);
+        sub_row++;
         uint32_t color = COLOR_ALPHA(themeTextColor(vitashell_config.theme_preset), (text_alpha > 255) ? 255 : text_alpha);
         uint32_t bullet = COLOR_ALPHA(themeAccentColor(vitashell_config.theme_preset), (int)(100 * menu_alpha_ratio));
 
@@ -183,7 +198,6 @@ void drawContextMenu() {
             color = COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), (text_alpha > 255) ? 255 : text_alpha);
           }
         }
-        if (cur_ctx->entries[i].visibility == CTX_INVISIBLE) continue;
 
         vita2d_draw_fill_circle(start_x + cur_ctx->parent->max_width + 27, y + FONT_Y_SPACE / 2.0f - 6, 3.5f, bullet);
         pgf_draw_text(start_x + cur_ctx->parent->max_width + 38, y, color, language_container[cur_ctx->entries[i].name]);
@@ -289,13 +303,23 @@ void contextMenuTouch(int tx, int ty) {
   if (ctx->parent)
     ctx = ctx->parent;
 
-  float menu_width = ctx_cur_menu_width + 24.0f;
-  float menu_height = ctx->n_entries * FONT_Y_SPACE + 16;
+  // Match drawContextMenu(): pack visible entries contiguously
+  int j, parent_visible = 0, sub_visible = 0;
+  for (j = 0; j < ctx->n_entries; j++)
+    if (ctx->entries[j].visibility == CTX_VISIBLE) parent_visible++;
   if (cur_ctx->parent) {
-    menu_height = MAX(cur_ctx->parent->n_entries, cur_ctx->n_entries) * FONT_Y_SPACE + 16;
+    for (j = 0; j < cur_ctx->n_entries; j++)
+      if (cur_ctx->entries[j].visibility == CTX_VISIBLE) sub_visible++;
   }
+  int rows = parent_visible;
+  if (cur_ctx->parent)
+    rows = MAX(parent_visible, sub_visible);
+
+  float menu_width = ctx_cur_menu_width + 24.0f;
+  float menu_height = rows * FONT_Y_SPACE + 16;
   float start_x = SCREEN_WIDTH - menu_width;
   float start_y = (SCREEN_HEIGHT - menu_height) / 2.0f;
+  if (start_y < 2.0f) start_y = 2.0f;
 
   // Tapped outside -> close
   if (tx < start_x || tx > SCREEN_WIDTH || ty < start_y || ty > start_y + menu_height) {
@@ -313,19 +337,20 @@ void contextMenuTouch(int tx, int ty) {
     }
   }
 
-  // Find tapped entry
-  int rel_y = ty - start_y - 10;
-  int tapped_pos = rel_y / (int)FONT_Y_SPACE;
-  if (tapped_pos < 0) return;
+  // Find tapped entry by contiguous visible row
+  int rel_y = ty - start_y - 8;
+  if (rel_y < 0) return;
+  int tapped_row = rel_y / (int)FONT_Y_SPACE;
 
-  int i;
+  int i, row = 0, found = -1;
   for (i = 0; i < active_ctx->n_entries; i++) {
     if (active_ctx->entries[i].visibility == CTX_INVISIBLE) continue;
-    if (active_ctx->entries[i].pos == tapped_pos) break;
+    if (row == tapped_row) { found = i; break; }
+    row++;
   }
-  if (i >= active_ctx->n_entries) return;
+  if (found < 0) return;
 
-  active_ctx->sel = i;
+  active_ctx->sel = found;
   if (active_ctx->callback)
-    ctx_menu_mode = active_ctx->callback(i, active_ctx->context);
+    ctx_menu_mode = active_ctx->callback(found, active_ctx->context);
 }

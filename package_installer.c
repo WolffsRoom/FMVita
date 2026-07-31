@@ -31,25 +31,43 @@ INCLUDE_EXTERN_RESOURCE(head_bin);
 
 extern char last_installed_titleid[12];
 
+// --- Debug install logging (remove after diagnosing) ---
+#define INSTALL_LOG "ux0:data/fmvita_install.log"
+static void installLog(const char *msg) {
+  SceUID fd = sceIoOpen(INSTALL_LOG, SCE_O_WRONLY | SCE_O_CREAT | SCE_O_APPEND, 0777);
+  if (fd < 0)
+    return;
+  char line[256];
+  int len = snprintf(line, sizeof(line), "[%llu] %s\n",
+                     (unsigned long long)sceKernelGetProcessTimeWide(), msg);
+  sceIoWrite(fd, line, len);
+  sceIoClose(fd);
+}
+
 static int loadScePaf() {
   static uint32_t argp[] = { 0x180000, -1, -1, 1, -1, -1 };
 
   int result = -1;
-  SceSysmoduleOpt opt;
-  memset(&opt, 0, sizeof(opt));
-  opt.flags = 1;
-  opt.result = &result;
 
-  return sceSysmoduleLoadModuleInternalWithArg(SCE_SYSMODULE_INTERNAL_PAF, sizeof(argp), argp, &opt);
+  uint32_t buf[4];
+  buf[0] = sizeof(buf);
+  buf[1] = (uint32_t)&result;
+  buf[2] = -1;
+  buf[3] = -1;
+
+  return sceSysmoduleLoadModuleInternalWithArg(SCE_SYSMODULE_INTERNAL_PAF, sizeof(argp), argp, (const SceSysmoduleOpt *)buf);
 }
 
 static int unloadScePaf() {
-  SceSysmoduleOpt opt;
   int result = -1;
-  memset(&opt, 0, sizeof(opt));
-  opt.flags = 1;
-  opt.result = &result;
-  return sceSysmoduleUnloadModuleInternalWithArg(SCE_SYSMODULE_INTERNAL_PAF, 0, NULL, &opt);
+
+  uint32_t buf[4];
+  buf[0] = sizeof(buf);
+  buf[1] = (uint32_t)&result;
+  buf[2] = -1;
+  buf[3] = -1;
+
+  return sceSysmoduleUnloadModuleInternalWithArg(SCE_SYSMODULE_INTERNAL_PAF, 0, NULL, (const SceSysmoduleOpt *)buf);
 }
 
 int promotePsm(const char *path, const char *titleid) {
@@ -96,35 +114,44 @@ int promotePsm(const char *path, const char *titleid) {
 int promoteApp(const char *path) {
   int res;
 
+  installLog("promoteApp: -> loadScePaf");
   res = loadScePaf();
+  installLog("promoteApp: <- loadScePaf");
   if (res < 0)
     return res;
 
+  installLog("promoteApp: -> load PROMOTER_UTIL");
   res = sceSysmoduleLoadModuleInternal(SCE_SYSMODULE_INTERNAL_PROMOTER_UTIL);
+  installLog("promoteApp: <- load PROMOTER_UTIL");
   if (res < 0)
     return res;
 
+  installLog("promoteApp: -> scePromoterUtilityInit");
   res = scePromoterUtilityInit();
+  installLog("promoteApp: <- scePromoterUtilityInit");
   if (res < 0)
     return res;
 
-  res = scePromoterUtilityPromotePkgWithRif(path, 1);
-  if (res < 0)
-    return res;
+  // This is the operation that actually installs the package. Use the WithRif
+  // variant (canonical VitaShell): it consumes the fake rif in the head.bin we
+  // generated in makeHeadBin(). The plain PromotePkg variant can stall for a
+  // very long time / never return on some firmwares, leaving the progress bar
+  // frozen at 100%.
+  installLog("promoteApp: -> PromotePkgWithRif");
+  int promote_res = scePromoterUtilityPromotePkgWithRif(path, 1);
+  installLog("promoteApp: <- PromotePkgWithRif");
 
-  res = scePromoterUtilityExit();
-  if (res < 0)
-    return res;
+  // Teardown below is best-effort cleanup. On recent VitaSDK/firmware the PAF
+  // unload can return a non-zero code (e.g. 0x80022005 / 0x805A10FE) even
+  // though the package was promoted successfully. Leaving PAF loaded is
+  // harmless (it is simply re-loaded on the next install), so these errors
+  // must NOT be reported as an install failure.
+  scePromoterUtilityExit();
+  sceSysmoduleUnloadModuleInternal(SCE_SYSMODULE_INTERNAL_PROMOTER_UTIL);
+  unloadScePaf();
+  installLog("promoteApp: teardown done");
 
-  res = sceSysmoduleUnloadModuleInternal(SCE_SYSMODULE_INTERNAL_PROMOTER_UTIL);
-  if (res < 0)
-    return res;
-
-  res = unloadScePaf();
-  if (res < 0)
-    return res;
-
-  return res;
+  return promote_res;
 }
 
 int deleteApp(const char *titleid) {
@@ -514,10 +541,25 @@ int install_thread(SceSize args_size, InstallArguments *args) {
       errorDialog(res);
       goto EXIT;
     }
+
+    // The extraction progress can under-count vs the update thread's target
+    // (bar stalls below 100%). In that case update_thread never sees
+    // current_value >= max, so it keeps spinning through promote and the
+    // finalization, racing with the dialog calls below and hanging near 99%.
+    // Force progress to completion and join the update thread before promote.
+    installLog("install_thread: extract done, joining update thread");
+    SetProgress(param.max, param.max);
+    if (thid >= 0) {
+      sceKernelWaitThreadEnd(thid, NULL, NULL);
+      thid = -1;
+    }
+    installLog("install_thread: update thread joined");
   }
 
   // Make head.bin
+  installLog("install_thread: -> makeHeadBin");
   res = makeHeadBin();
+  installLog("install_thread: <- makeHeadBin");
   if (res < 0) {
     closeWaitDialog();
     install_error_step = 8;
@@ -527,8 +569,15 @@ int install_thread(SceSize args_size, InstallArguments *args) {
     goto EXIT;
   }
 
+  // promoteApp() below is synchronous and can take over a minute for large
+  // packages, during which nothing updates the progress bar. Show 100% up
+  // front so it doesn't look frozen at 99%.
+  sceMsgDialogProgressBarSetValue(SCE_MSG_DIALOG_PROGRESSBAR_TARGET_BAR_DEFAULT, 100);
+
   // Promote app
+  installLog("install_thread: -> promoteApp");
   res = promoteApp(PACKAGE_DIR);
+  installLog("install_thread: <- promoteApp");
   if (res < 0) {
     closeWaitDialog();
     install_error_step = 9;
@@ -539,20 +588,26 @@ int install_thread(SceSize args_size, InstallArguments *args) {
   }
 
   // Set progress to 100%
+  installLog("install_thread: set 100%");
   sceMsgDialogProgressBarSetValue(SCE_MSG_DIALOG_PROGRESSBAR_TARGET_BAR_DEFAULT, 100);
   sceKernelDelayThread(COUNTUP_WAIT);
 
   // Close
+  installLog("install_thread: sceMsgDialogClose");
   sceMsgDialogClose();
 
+  installLog("install_thread: setDialogStep INSTALLED");
   setDialogStep(DIALOG_STEP_INSTALLED);
 
 EXIT:
+  installLog("install_thread: EXIT (join update thread if any)");
   if (thid >= 0)
     sceKernelWaitThreadEnd(thid, NULL, NULL);
+  installLog("install_thread: update thread joined (EXIT)");
 
   // Recursively clean up package_temp directory
   removePath(PACKAGE_DIR, NULL);
+  installLog("install_thread: done");
 
   // Unlock power timers
   powerUnlock();
