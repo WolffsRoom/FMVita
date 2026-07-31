@@ -1,22 +1,36 @@
 <div align="center">
-  <img src="https://github.com/WolffsRoom/FMVita/blob/master/media/Media/%C3%8Dcones%20-%20Branco.svg" width="128" alt="Logo FMVita">
-  <h1>FMVita</h1>
-  <h3>File Manager Vita</h3>
-  <p>
-    <img src="https://img.shields.io/badge/version-0.6.0-blue?style=flat-square" alt="Version">
-    <img src="https://img.shields.io/badge/platform-PS%20Vita-blueviolet?style=flat-square" alt="Platform">
-    <img src="https://img.shields.io/badge/license-GPLv3-green?style=flat-square" alt="License">
-  </p>
-  <p align="center">
-    <a href="#installation">Installation</a> •
-    <a href="#key-differences-and-new-features">Features</a> •
-    <a href="#directory-structure-changes">Directories</a> •
-    <a href="#technical-details-and-build">Build</a> •
-    <a href="#changelog">Changelog</a>
-  </p>
-</div>
 
----
+  <!-- Logo Adaptável ao Tema (Light / Dark Mode) -->
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/WolffsRoom/FMVita/master/media/Media/%C3%8Dcones%20-%20Branco.svg">
+    <img src="https://raw.githubusercontent.com/WolffsRoom/FMVita/master/media/Media/%C3%8Dcones%20-%20Preto.svg" width="128" alt="FMVita Logo">
+  </picture>
+
+  <h1>FMVita</h1>
+  <p><b>File Manager Vita</b> — Gerenciador de arquivos completo e otimizado para o PlayStation Vita.</p>
+
+  <!-- Badges -->
+  <p>
+    <a href="https://github.com/WolffsRoom/FMVita/releases">
+      <img src="https://img.shields.io/github/v/release/WolffsRoom/FMVita?style=for-the-badge&color=007acc&label=Release" alt="Latest Release">
+    </a>
+    <img src="https://img.shields.io/badge/Platform-PS_Vita-6f42c1?style=for-the-badge&logo=playstation&logoColor=white" alt="Platform">
+    <a href="LICENSE">
+      <img src="https://img.shields.io/github/license/WolffsRoom/FMVita?style=for-the-badge&color=2ea44f" alt="License">
+    </a>
+  </p>
+
+  <!-- Navegação Rápida -->
+  <p>
+    <a href="#installation"><b>Instalação</b></a> •
+    <a href="#key-differences-and-new-features"><b>Recursos</b></a> •
+    <a href="#directory-structure-changes"><b>Diretórios</b></a> •
+    <a href="#technical-details-and-build"><b>Build & Compilação</b></a> •
+    <a href="#changelog"><b>Histórico</b></a>
+  </p>
+
+</div>
+<br>
 
 **FMVita** is an enhanced fork of **VitaShell** (originally created by *TheFloW*). This version focuses on **usability**, expanding touchscreen support for the PS Vita, introducing animated backgrounds, various Quality of Life (QoL) improvements, and a new program file organization under the independent directory `ux0:FMVita/`.
 
@@ -24,7 +38,7 @@
   <img src="https://github.com/WolffsRoom/FMVita/blob/master/Screenshots/Tr%C3%AAs%20colunas.png" alt="3 Columns View" width="80%">
 </div>
 
----
+<br>
 
 ## Installation
 
@@ -33,7 +47,7 @@ FMVita was designed to prevent conflicts with your current configuration. Theref
 * **Zero Conflicts:** It can be installed side-by-side with the original VitaShell, OneMenuPlus, MolecularShell, or any other file manager.
 * **How to Install:** Simply transfer the FMVita `.vpk` file to your console (via FTP or USB) and install it using VitaShell (or any other file manager application you currently use).
 
----
+<br>
 
 ## Key Differences and New Features
 
