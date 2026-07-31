@@ -6,8 +6,8 @@
     <img src="https://raw.githubusercontent.com/WolffsRoom/FMVita/master/media/Media/%C3%8Dcones%20-%20Preto.svg" width="128" alt="FMVita Logo">
   </picture>
 
-  <h1>FMVita</h1>
-  <p><b>File Manager Vita</b> — Gerenciador de arquivos completo e otimizado para o PlayStation Vita.</p>
+  <h1>File Manager Vita</h1>
+  <p><b>File Manager Vita</b> - Gerenciador de arquivos completo e otimizado para o PlayStation Vita.</p>
 
   <!-- Badges -->
   <p>
