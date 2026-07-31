@@ -300,6 +300,11 @@ void initUsb();
 
 extern int toolbar_press_btn;
 extern int toolbar_hover_btn;
+extern vita2d_texture *vpk_preview_icon;
+extern char vpk_preview_title[128];
+extern char vpk_preview_titleid[16];
+extern char vpk_preview_version[16];
+void freeVpkPreviewIcon();
 void drawStatusBar();
 void drawScrollBar(int pos, int n);
 void drawShellInfo(const char *path);

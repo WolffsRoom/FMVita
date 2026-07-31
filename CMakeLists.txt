@@ -76,6 +76,7 @@ file(GLOB res_files RELATIVE
   resources/*.bin
   resources/gif_default/*.gif
   resources/image/*.png
+  l10n/*.txt
 )
 
 # ugly hack

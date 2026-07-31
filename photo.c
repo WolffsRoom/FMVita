@@ -48,12 +48,18 @@ static vita2d_texture *loadImage(const char *file, int type, char *buffer) {
 
   if (!img_data) return NULL;
 
-  if (w > 960 || h > 544) {
-      int new_w = 960;
-      int new_h = (h * 960) / w;
-      if (new_h > 544) {
-          new_h = 544;
-          new_w = (w * 544) / h;
+  // Only downscale images larger than a generous cap. The old 960x544 cap
+  // crushed high-resolution art (e.g. decrypted game assets) to screen size,
+  // which looked blurry — especially when zooming. Keep up to 1920x1088 so the
+  // GPU can supersample it down for a crisp fit and real detail on zoom.
+  #define PHOTO_MAX_W 1920
+  #define PHOTO_MAX_H 1088
+  if (w > PHOTO_MAX_W || h > PHOTO_MAX_H) {
+      int new_w = PHOTO_MAX_W;
+      int new_h = (h * PHOTO_MAX_W) / w;
+      if (new_h > PHOTO_MAX_H) {
+          new_h = PHOTO_MAX_H;
+          new_w = (w * PHOTO_MAX_H) / h;
       }
       unsigned char *resized_data = malloc(new_w * new_h * 4);
       if (resized_data) {

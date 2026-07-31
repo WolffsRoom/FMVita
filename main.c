@@ -87,6 +87,7 @@ char qr_dialog_size[16] = "";
 int qr_dialog_is_vpk = 0;
 
 void setTouchConfirm(const char *msg, void (*yes_cb)(void), void (*no_cb)(void)) {
+  freeVpkPreviewIcon(); // clear any stale preview; VPK path re-loads it after
   strncpy(touch_confirm_message, msg, MAX_CONFIRM_MSG - 1);
   touch_confirm_message[MAX_CONFIRM_MSG - 1] = '\0';
   touch_confirm_yes_cb = yes_cb;
@@ -106,21 +107,58 @@ void drawTouchConfirmDialog() {
 
   vita2d_draw_rectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, RGBA8(0, 0, 0, 190));
 
-  int cw = 540, ch = 180;
+  // VPK install preview: icon + app name / title id / version
+  int is_vpk = (vpk_preview_icon != NULL) || (vpk_preview_titleid[0] != '\0');
+  int icon_size = 84;
+  int info_h = 0;
+  if (is_vpk)
+    info_h = (vpk_preview_icon ? (icon_size + 8) : 0) + 30 /*title*/ + 22 /*id/ver*/;
+
+  int cw = 540, ch = 180 + info_h;
   int cx = (SCREEN_WIDTH - cw) / 2, cy = (SCREEN_HEIGHT - ch) / 2;
   vita2d_draw_rectangle(cx, cy, cw, ch, themeDialogBg(vitashell_config.theme_preset));
   vita2d_draw_rectangle(cx, cy, cw, 1, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 25));
   vita2d_draw_rectangle(cx, cy + ch - 1, cw, 1, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 15));
 
+  int text_off = info_h;
+  if (is_vpk) {
+    float top = cy + 20;
+    if (vpk_preview_icon) {
+      float iw = vita2d_texture_get_width(vpk_preview_icon);
+      float ih = vita2d_texture_get_height(vpk_preview_icon);
+      if (iw > 0 && ih > 0) {
+        float ix = SCREEN_WIDTH / 2.0f - icon_size / 2.0f;
+        vita2d_draw_rectangle(ix - 3, top - 3, icon_size + 6, icon_size + 6, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 20));
+        vita2d_draw_texture_scale(vpk_preview_icon, ix, top, icon_size / iw, icon_size / ih);
+      }
+      top += icon_size + 8;
+    }
+    // App name (truncated to keep within the card)
+    char title[48];
+    const char *src = vpk_preview_title[0] ? vpk_preview_title : "VPK";
+    strncpy(title, src, sizeof(title) - 1);
+    title[sizeof(title) - 1] = '\0';
+    if (strlen(src) > sizeof(title) - 1) { title[sizeof(title) - 4] = '\0'; strcat(title, "..."); }
+    draw_centered_text(SCREEN_WIDTH / 2.0f, top, themeAccentColor(vitashell_config.theme_preset), title);
+    top += 30;
+    // Title id + version
+    char idv[48];
+    snprintf(idv, sizeof(idv), "%s%s%s",
+             vpk_preview_titleid,
+             vpk_preview_version[0] ? "   v" : "",
+             vpk_preview_version);
+    draw_centered_text(SCREEN_WIDTH / 2.0f, top, themeTextDim(vitashell_config.theme_preset), idv);
+  }
+
   char msg_display[512];
   strncpy(msg_display, touch_confirm_message, 80);
   msg_display[80] = '\0';
-  draw_centered_text(SCREEN_WIDTH / 2.0f, cy + 52, themeTextColor(vitashell_config.theme_preset), msg_display);
+  draw_centered_text(SCREEN_WIDTH / 2.0f, cy + 52 + text_off, themeTextColor(vitashell_config.theme_preset), msg_display);
 
   int enter_btn = (enter_button == SCE_SYSTEM_PARAM_ENTER_BUTTON_CIRCLE) ? BUTTON_CIRCLE : BUTTON_CROSS;
   int cancel_btn = (enter_button == SCE_SYSTEM_PARAM_ENTER_BUTTON_CIRCLE) ? BUTTON_CROSS : BUTTON_CIRCLE;
 
-  int sim_x = cx + 50, sim_y = cy + 105, sim_w = 190, sim_h = 52;
+  int sim_x = cx + 50, sim_y = cy + 105 + text_off, sim_w = 190, sim_h = 52;
   vita2d_draw_rectangle(sim_x, sim_y, sim_w, sim_h, themeButtonSuccess(vitashell_config.theme_preset));
   vita2d_draw_rectangle(sim_x, sim_y, sim_w, 2, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 60));
   vita2d_draw_rectangle(sim_x, sim_y + sim_h - 2, sim_w, 2, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 60));
@@ -129,7 +167,7 @@ void drawTouchConfirmDialog() {
   drawButton(enter_btn, sim_x + 20, sim_y + 16);
   draw_centered_text(sim_x + sim_w / 2.0f + 15, sim_y + 16, themeTopbarText(vitashell_config.theme_preset), language_container[CONFIRM_YES_BTN]);
 
-  int nao_x = cx + cw - 50 - 190, nao_y = cy + 105, nao_w = 190, nao_h = 52;
+  int nao_x = cx + cw - 50 - 190, nao_y = cy + 105 + text_off, nao_w = 190, nao_h = 52;
   vita2d_draw_rectangle(nao_x, nao_y, nao_w, nao_h, themeButtonDanger(vitashell_config.theme_preset));
   vita2d_draw_rectangle(nao_x, nao_y, nao_w, 2, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 50));
   vita2d_draw_rectangle(nao_x, nao_y + nao_h - 2, nao_w, 2, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 50));

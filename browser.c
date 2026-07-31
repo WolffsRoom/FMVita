@@ -656,8 +656,64 @@ static void refreshCopyList() {
   }
 }
 
-static void vpkInstallYes() { initMessageDialog(MESSAGE_DIALOG_PROGRESS_BAR, language_container[INSTALLING]); setDialogStep(DIALOG_STEP_INSTALL_CONFIRMED); }
-static void vpkInstallNo() { setDialogStep(DIALOG_STEP_NONE); }
+// Preview of the VPK being installed (icon + app name/id/version), shown in
+// the install confirmation dialog.
+vita2d_texture *vpk_preview_icon = NULL;
+char vpk_preview_title[128] = "";
+char vpk_preview_titleid[16] = "";
+char vpk_preview_version[16] = "";
+
+void freeVpkPreviewIcon() {
+  if (vpk_preview_icon) {
+    vita2d_free_texture(vpk_preview_icon);
+    vpk_preview_icon = NULL;
+  }
+  vpk_preview_title[0] = '\0';
+  vpk_preview_titleid[0] = '\0';
+  vpk_preview_version[0] = '\0';
+}
+
+static void loadVpkPreviewIcon(const char *vpk_path) {
+  freeVpkPreviewIcon();
+  archiveClearPassword();
+  if (archiveOpen(vpk_path) < 0)
+    return;
+
+  char path[MAX_PATH_LENGTH];
+  SceIoStat st;
+
+  // Icon
+  snprintf(path, sizeof(path), "%s/sce_sys/icon0.png", vpk_path);
+  memset(&st, 0, sizeof(st));
+  if (archiveFileGetstat(path, &st) >= 0 && st.st_size > 0 && st.st_size < 4 * 1024 * 1024) {
+    void *buf = malloc(st.st_size);
+    if (buf) {
+      if (ReadArchiveFile(path, buf, st.st_size) > 0)
+        vpk_preview_icon = vita2d_load_PNG_buffer(buf);
+      free(buf);
+    }
+  }
+
+  // App name / title id / version from param.sfo
+  snprintf(path, sizeof(path), "%s/sce_sys/param.sfo", vpk_path);
+  memset(&st, 0, sizeof(st));
+  if (archiveFileGetstat(path, &st) >= 0 && st.st_size > 0 && st.st_size < 128 * 1024) {
+    void *sfo = malloc(st.st_size);
+    if (sfo) {
+      if (ReadArchiveFile(path, sfo, st.st_size) > 0) {
+        getSfoString(sfo, "TITLE", vpk_preview_title, sizeof(vpk_preview_title));
+        getSfoString(sfo, "TITLE_ID", vpk_preview_titleid, sizeof(vpk_preview_titleid));
+        getSfoString(sfo, "APP_VER", vpk_preview_version, sizeof(vpk_preview_version));
+      }
+      free(sfo);
+    }
+  }
+
+  archiveClose();
+}
+
+static void vpkInstallYes() { freeVpkPreviewIcon(); initMessageDialog(MESSAGE_DIALOG_PROGRESS_BAR, language_container[INSTALLING]); setDialogStep(DIALOG_STEP_INSTALL_CONFIRMED); }
+static void vpkInstallNo() { freeVpkPreviewIcon(); setDialogStep(DIALOG_STEP_NONE); }
 
 static int handleFile(const char *file, FileListEntry *entry) {
   int res = 0;
@@ -713,6 +769,7 @@ static int handleFile(const char *file, FileListEntry *entry) {
       
     case FILE_TYPE_VPK:
       setTouchConfirm(language_container[INSTALL_QUESTION], vpkInstallYes, vpkInstallNo);
+      loadVpkPreviewIcon(file);
       break;
       
     case FILE_TYPE_ARCHIVE:

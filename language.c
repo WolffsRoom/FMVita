@@ -22,6 +22,26 @@
 
 INCLUDE_EXTERN_RESOURCE(english_us_txt);
 
+// Language files are embedded from l10n/*.txt (linker symbols
+// _binary_l10n_<name>_txt_start / _size). Loading strings from memory avoids
+// the unreliable app0:l10n/ file access on some builds/firmwares.
+#define L10N_DECL(n) extern unsigned char _binary_l10n_##n##_txt_start; \
+                     extern unsigned char _binary_l10n_##n##_txt_size;
+L10N_DECL(japanese)  L10N_DECL(french)     L10N_DECL(spanish)   L10N_DECL(german)
+L10N_DECL(italian)   L10N_DECL(dutch)      L10N_DECL(portuguese) L10N_DECL(russian)
+L10N_DECL(korean)    L10N_DECL(chinese_t)  L10N_DECL(chinese_s) L10N_DECL(swedish)
+L10N_DECL(danish)    L10N_DECL(norwegian)  L10N_DECL(polish)    L10N_DECL(portuguese_br)
+L10N_DECL(turkish)
+
+#define L10N_ENT(n) { #n, &_binary_l10n_##n##_txt_start, (int)&_binary_l10n_##n##_txt_size }
+static struct { const char *name; void *buf; int size; } embedded_langs[] = {
+  L10N_ENT(japanese),  L10N_ENT(french),     L10N_ENT(spanish),   L10N_ENT(german),
+  L10N_ENT(italian),   L10N_ENT(dutch),      L10N_ENT(portuguese), L10N_ENT(russian),
+  L10N_ENT(korean),    L10N_ENT(chinese_t),  L10N_ENT(chinese_s), L10N_ENT(swedish),
+  L10N_ENT(danish),    L10N_ENT(norwegian),  L10N_ENT(polish),    L10N_ENT(portuguese_br),
+  L10N_ENT(turkish),
+};
+
 static char *lang[] = {
   "japanese",
   "english_us",
@@ -355,22 +375,22 @@ void loadLanguage(int id) {
   readConfigBuffer(&_binary_resources_english_us_txt_start, (int)&_binary_resources_english_us_txt_size,
                    language_entries, sizeof(language_entries) / sizeof(ConfigEntry));
 
-  // Load bundled language file. Prefer app0:; if that mount can't read the
-  // file (some builds/firmwares fail on app0: subdirectories), fall back to the
-  // physical install path under ux0:app/<titleid>/.
-  if (id >= 0 && id < (sizeof(lang) / sizeof(char *))) {
-    char path[MAX_PATH_LENGTH];
-    snprintf(path, MAX_PATH_LENGTH, "app0:l10n/%s.txt", lang[id]);
-    int r = readConfig(path, language_entries, sizeof(language_entries) / sizeof(ConfigEntry));
-    if (r < 0) {
-      snprintf(path, MAX_PATH_LENGTH, "ux0:app/FILEMNGR1/l10n/%s.txt", lang[id]);
-      readConfig(path, language_entries, sizeof(language_entries) / sizeof(ConfigEntry));
+  // Overlay the selected language from its embedded resource (english_us is
+  // already the default above; finnish has no file). Reading from memory is
+  // reliable regardless of app0:/ux0: file access.
+  if (id >= 0 && id < (int)(sizeof(lang) / sizeof(char *))) {
+    for (int i = 0; i < (int)(sizeof(embedded_langs) / sizeof(embedded_langs[0])); i++) {
+      if (strcmp(embedded_langs[i].name, lang[id]) == 0) {
+        readConfigBuffer(embedded_langs[i].buf, embedded_langs[i].size,
+                         language_entries, sizeof(language_entries) / sizeof(ConfigEntry));
+        break;
+      }
     }
   }
 
-  // Load optional user override from ux0:
+  // Load optional user override from ux0: (lets users tweak strings)
   if (use_custom_config) {
-    if (id >= 0 && id < (sizeof(lang) / sizeof(char *))) {
+    if (id >= 0 && id < (int)(sizeof(lang) / sizeof(char *))) {
       char path[MAX_PATH_LENGTH];
       snprintf(path, MAX_PATH_LENGTH, "ux0:FMVita/language/%s.txt", lang[id]);
       readConfig(path, language_entries, sizeof(language_entries) / sizeof(ConfigEntry));
