@@ -1853,9 +1853,13 @@ skip_touch_processing:
       } else if (is_touching) {
         is_touching = 0;
         int tx = touch_x_last, ty = touch_y_last;
-        int cw = 540, ch = 180;
+        // Match drawTouchConfirmDialog(): the VPK preview (icon + name/id/ver)
+        // makes the card taller and pushes the buttons down by info_h.
+        int is_vpk = (vpk_preview_icon != NULL) || (vpk_preview_titleid[0] != '\0');
+        int info_h = is_vpk ? ((vpk_preview_icon ? (84 + 8) : 0) + 30 + 22) : 0;
+        int cw = 540, ch = 180 + info_h;
         int cx = (SCREEN_WIDTH - cw) / 2, cy = (SCREEN_HEIGHT - ch) / 2;
-        int sim_x = cx + 50, sim_y = cy + 105, sim_w = 190, sim_h = 52;
+        int sim_x = cx + 50, sim_y = cy + 105 + info_h, sim_w = 190, sim_h = 52;
         if (tx >= sim_x && tx < sim_x + sim_w && ty >= sim_y && ty < sim_y + sim_h) {
           if (touch_confirm_yes_cb) {
             touch_confirm_yes_cb();
@@ -1865,7 +1869,7 @@ skip_touch_processing:
           if (getDialogStep() == DIALOG_STEP_TOUCH_CONFIRM)
             setDialogStep(DIALOG_STEP_NONE);
         }
-        int nao_x = cx + cw - 50 - 190, nao_y = cy + 105, nao_w = 190, nao_h = 52;
+        int nao_x = cx + cw - 50 - 190, nao_y = cy + 105 + info_h, nao_w = 190, nao_h = 52;
         if (tx >= nao_x && tx < nao_x + nao_w && ty >= nao_y && ty < nao_y + nao_h) {
           if (touch_confirm_no_cb) {
             touch_confirm_no_cb();
