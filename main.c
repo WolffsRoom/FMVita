@@ -100,12 +100,22 @@ static void draw_centered_text(float x, float y, unsigned int color, const char 
 }
 
 void drawTouchConfirmDialog() {
-  if (getDialogStep() != DIALOG_STEP_TOUCH_CONFIRM)
+  static float tc_anim = 0.0f;
+  static int tc_was_open = 0;
+  if (getDialogStep() != DIALOG_STEP_TOUCH_CONFIRM) {
+    tc_was_open = 0;
+    tc_anim = 0.0f;
     return;
+  }
 
   vita2d_common_dialog_update();
 
-  vita2d_draw_rectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, RGBA8(0, 0, 0, 190));
+  // Appear animation: fade the overlay and slide the card up into place
+  if (!tc_was_open) { tc_was_open = 1; tc_anim = 0.0f; }
+  if (tc_anim < 1.0f) { tc_anim += 0.16f; if (tc_anim > 1.0f) tc_anim = 1.0f; }
+  float anim_dy = (1.0f - tc_anim) * 26.0f;
+
+  vita2d_draw_rectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, RGBA8(0, 0, 0, (int)(190 * tc_anim)));
 
   // VPK install preview: icon + app name / title id / version
   int is_vpk = (vpk_preview_icon != NULL) || (vpk_preview_titleid[0] != '\0');
@@ -115,7 +125,7 @@ void drawTouchConfirmDialog() {
     info_h = (vpk_preview_icon ? (icon_size + 8) : 0) + 30 /*title*/ + 22 /*id/ver*/;
 
   int cw = 540, ch = 180 + info_h;
-  int cx = (SCREEN_WIDTH - cw) / 2, cy = (SCREEN_HEIGHT - ch) / 2;
+  int cx = (SCREEN_WIDTH - cw) / 2, cy = (SCREEN_HEIGHT - ch) / 2 + (int)anim_dy;
   vita2d_draw_rectangle(cx, cy, cw, ch, themeDialogBg(vitashell_config.theme_preset));
   vita2d_draw_rectangle(cx, cy, cw, 1, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 25));
   vita2d_draw_rectangle(cx, cy + ch - 1, cw, 1, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 15));
@@ -158,8 +168,14 @@ void drawTouchConfirmDialog() {
   int enter_btn = (enter_button == SCE_SYSTEM_PARAM_ENTER_BUTTON_CIRCLE) ? BUTTON_CIRCLE : BUTTON_CROSS;
   int cancel_btn = (enter_button == SCE_SYSTEM_PARAM_ENTER_BUTTON_CIRCLE) ? BUTTON_CROSS : BUTTON_CIRCLE;
 
+  // Liquid Glass / Icons theme: translucent confirmation buttons
+  unsigned int yes_fill = lg_icons_active ? COLOR_ALPHA(themeButtonSuccess(vitashell_config.theme_preset), 120)
+                                          : themeButtonSuccess(vitashell_config.theme_preset);
+  unsigned int no_fill  = lg_icons_active ? COLOR_ALPHA(themeButtonDanger(vitashell_config.theme_preset), 120)
+                                          : themeButtonDanger(vitashell_config.theme_preset);
+
   int sim_x = cx + 50, sim_y = cy + 105 + text_off, sim_w = 190, sim_h = 52;
-  vita2d_draw_rectangle(sim_x, sim_y, sim_w, sim_h, themeButtonSuccess(vitashell_config.theme_preset));
+  vita2d_draw_rectangle(sim_x, sim_y, sim_w, sim_h, yes_fill);
   vita2d_draw_rectangle(sim_x, sim_y, sim_w, 2, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 60));
   vita2d_draw_rectangle(sim_x, sim_y + sim_h - 2, sim_w, 2, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 60));
   vita2d_draw_rectangle(sim_x, sim_y, 2, sim_h, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 60));
@@ -168,7 +184,7 @@ void drawTouchConfirmDialog() {
   draw_centered_text(sim_x + sim_w / 2.0f + 15, sim_y + 16, themeTopbarText(vitashell_config.theme_preset), language_container[CONFIRM_YES_BTN]);
 
   int nao_x = cx + cw - 50 - 190, nao_y = cy + 105 + text_off, nao_w = 190, nao_h = 52;
-  vita2d_draw_rectangle(nao_x, nao_y, nao_w, nao_h, themeButtonDanger(vitashell_config.theme_preset));
+  vita2d_draw_rectangle(nao_x, nao_y, nao_w, nao_h, no_fill);
   vita2d_draw_rectangle(nao_x, nao_y, nao_w, 2, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 50));
   vita2d_draw_rectangle(nao_x, nao_y + nao_h - 2, nao_w, 2, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 50));
   vita2d_draw_rectangle(nao_x, nao_y, 2, nao_h, COLOR_ALPHA(themeTopbarText(vitashell_config.theme_preset), 50));

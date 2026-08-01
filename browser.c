@@ -707,6 +707,11 @@ void freeVpkPreviewIcon() {
 
 static void loadVpkPreviewIcon(const char *vpk_path) {
   freeVpkPreviewIcon();
+  // Skip the preview while already browsing inside an archive: archiveOpen()
+  // rebuilds the global archive tree and archiveClose() frees it, which would
+  // corrupt the archive the browser is currently showing.
+  if (isInArchive())
+    return;
   archiveClearPassword();
   if (archiveOpen(vpk_path) < 0)
     return;
@@ -2548,6 +2553,11 @@ COLOR_ALPHA(themeListBg(vitashell_config.theme_preset), 100) : themeListBg(vitas
           if (lg && lgIsSettingsExt(file_entry->name))
             icon = lg_settings_icon;
         }
+
+        // Icons theme: entries inside the bookmarks folder get the bookmark icon
+        if (lg && strcmp(file_entry->name, DIR_UP) != 0 &&
+            strncmp(file_list.path, VITASHELL_BOOKMARKS_PATH, strlen(VITASHELL_BOOKMARKS_PATH)) == 0)
+          icon = lg_bookmark_entry_icon;
 
         // Selection Bar (accent blue)
         int is_selected = (i == base_pos + rel_pos);
