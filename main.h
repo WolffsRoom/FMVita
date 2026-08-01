@@ -342,6 +342,7 @@ void drawFtpTouchDialog();
 #define THEME_PRESET_BROWN  5
 #define THEME_PRESET_GRAY   6
 #define THEME_PRESET_CUSTOM 7
+#define THEME_PRESET_LIQUID_GLASS 8
 
 extern int BACKGROUND_COLOR;
 extern int TITLE_COLOR;
@@ -385,6 +386,7 @@ static inline unsigned int themeTopbarText(int preset) {
 static inline unsigned int themeBgColor(int preset) {
   if (preset == THEME_PRESET_CUSTOM) return BACKGROUND_COLOR;
   switch (preset) {
+    case THEME_PRESET_LIQUID_GLASS: return RGBA8(10, 18, 32, 255); // deep blue glass base
     case THEME_PRESET_LIGHT: return RGBA8(220, 222, 225, 255);
     case THEME_PRESET_BLUE:  return RGBA8(6, 14, 30, 255);
     case THEME_PRESET_RED:   return RGBA8(32, 12, 14, 255);
@@ -409,6 +411,7 @@ static inline unsigned int themeListBg(int preset) {
 static inline unsigned int themeCardBg(int preset) {
   if (preset == THEME_PRESET_CUSTOM) return COLOR_ALPHA(BACKGROUND_COLOR, 220);
   switch (preset) {
+    case THEME_PRESET_LIQUID_GLASS: return RGBA8(30, 46, 66, 150); // frosted, translucent
     case THEME_PRESET_LIGHT: return RGBA8(230, 228, 222, 220);
     case THEME_PRESET_BLUE:  return RGBA8(10, 20, 44, 220);
     case THEME_PRESET_RED:   return RGBA8(40, 18, 20, 220);
@@ -484,6 +487,7 @@ static inline unsigned int themeFolderColor(int preset) {
 static inline unsigned int themeAccentColor(int preset) {
   if (preset == THEME_PRESET_CUSTOM) return FOCUS_COLOR;
   switch (preset) {
+    case THEME_PRESET_LIQUID_GLASS: return RGBA8(120, 220, 255, 255); // glassy cyan
     case THEME_PRESET_LIGHT: return RGBA8(42, 88, 175, 255);
     case THEME_PRESET_BLUE:  return RGBA8(60, 150, 255, 255);
     case THEME_PRESET_RED:   return RGBA8(210, 60, 60, 255);

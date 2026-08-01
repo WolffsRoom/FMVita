@@ -91,6 +91,9 @@ extern vita2d_texture *folder_icon, *file_icon, *archive_icon, *image_icon, *aud
     *fastforward_image, *fastrewind_image, *folder_symlink_icon, *file_symlink_icon,
     *button_plus, *button_fav;
 
+extern vita2d_texture *lg_folder_icon, *lg_root_icon, *lg_parent_icon, *lg_vpk_icon,
+    *lg_encrypted_icon, *lg_bookmark_icon, *lg_plus_icon, *lg_cursor_icon, *lg_ftp_icon;
+
 extern vita2d_texture *wallpaper_image;
 extern vita2d_texture *previous_wallpaper_image, *current_wallpaper_image;
 

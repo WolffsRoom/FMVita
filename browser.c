@@ -388,6 +388,24 @@ void setFocusOnFilename(const char *name) {
   }
 }
 
+// --- Liquid Glass helpers ---
+static inline int lgActive() { return vitashell_config.theme_preset == THEME_PRESET_LIQUID_GLASS; }
+static int lgIsDeviceRoot(const char *name) {
+  int n = name ? strlen(name) : 0;
+  return (n > 1 && name[n - 1] == ':'); // e.g. "ux0:", "uma0:"
+}
+static int lgIsEncryptedName(const char *name) {
+  return name && (strcmp(name, "app") == 0 || strcmp(name, "patch") == 0 ||
+                  strcmp(name, "addcont") == 0 || strcmp(name, "appmeta") == 0 ||
+                  strcmp(name, "user") == 0);
+}
+static int lgInEncryptedArea(const char *path) {
+  return path && (strcasestr(path, "/app/") || strcasestr(path, ":app/") ||
+                  strcasestr(path, "/patch/") || strcasestr(path, ":patch/") ||
+                  strcasestr(path, "/addcont/") || strcasestr(path, ":addcont/") ||
+                  strcasestr(path, "/appmeta/") || strcasestr(path, ":appmeta/"));
+}
+
 // Extensions treated as text for content search
 static int isTextExtension(const char *name) {
   const char *ext = strrchr(name, '.');
@@ -2244,8 +2262,8 @@ FONT_Y_SPACE) - (MAX_ENTRIES * FONT_Y_SPACE);
         
         while (gp_entry && p_i < 13) {
             uint32_t p_color = COLOR_ALPHA(themeTextColor(vitashell_config.theme_preset), 80);
-            vita2d_texture *p_icon = file_icon;
-            if (gp_entry->is_folder) p_icon = folder_icon;
+            vita2d_texture *p_icon = lgActive() ? lg_folder_icon : file_icon;
+            if (gp_entry->is_folder) p_icon = lgActive() ? lg_folder_icon : folder_icon;
             else if (gp_entry->is_symlink) p_icon = folder_symlink_icon;
             
             char curr_folder[256];
@@ -2300,8 +2318,8 @@ FONT_Y_SPACE) - (MAX_ENTRIES * FONT_Y_SPACE);
         
         while (p_entry && p_i < 13) {
             uint32_t p_color = COLOR_ALPHA(themeTextColor(vitashell_config.theme_preset), 120);
-            vita2d_texture *p_icon = file_icon;
-            if (p_entry->is_folder) p_icon = folder_icon;
+            vita2d_texture *p_icon = lgActive() ? lg_folder_icon : file_icon;
+            if (p_entry->is_folder) p_icon = lgActive() ? lg_folder_icon : folder_icon;
             else if (p_entry->is_symlink) p_icon = folder_symlink_icon;
             
             char curr_folder[256];
@@ -2394,6 +2412,8 @@ COLOR_ALPHA(themeListBg(vitashell_config.theme_preset), 100) : themeListBg(vitas
         }
 
 
+        int lg = lgActive();
+        int lg_enc = lg && lgInEncryptedArea(file_list.path);
         vita2d_texture *icon = NULL;
         if (file_entry->is_symlink) {
           if (file_entry->symlink->to_file) {
@@ -2406,7 +2426,14 @@ COLOR_ALPHA(themeListBg(vitashell_config.theme_preset), 100) : themeListBg(vitas
         }
         else if (file_entry->is_folder) {
           color = themeFolderColor(vitashell_config.theme_preset);
-          icon = folder_icon;
+          if (lg) {
+            if (strcmp(file_entry->name, DIR_UP) == 0)        icon = lg_parent_icon;
+            else if (lgIsDeviceRoot(file_entry->name))        icon = lg_root_icon;
+            else if (lg_enc || lgIsEncryptedName(file_entry->name)) icon = lg_encrypted_icon;
+            else                                              icon = lg_folder_icon;
+          } else {
+            icon = folder_icon;
+          }
         } else {
           switch (file_entry->type) {
             case FILE_TYPE_BMP:
@@ -2416,8 +2443,12 @@ COLOR_ALPHA(themeListBg(vitashell_config.theme_preset), 100) : themeListBg(vitas
               color = RGBA8(60, 210, 120, 255);
               icon = image_icon;
               break;
-              
+
             case FILE_TYPE_VPK:
+              color = RGBA8(240, 190, 50, 255);
+              icon = lg ? lg_vpk_icon : archive_icon;
+              break;
+
             case FILE_TYPE_ARCHIVE:
               color = RGBA8(240, 190, 50, 255);
               icon = archive_icon;
@@ -2443,7 +2474,7 @@ COLOR_ALPHA(themeListBg(vitashell_config.theme_preset), 100) : themeListBg(vitas
               
             default:
               color = txt_color;
-              icon = file_icon;
+              icon = (lg_enc) ? lg_encrypted_icon : file_icon;
               break;
           }
         }
@@ -2646,7 +2677,10 @@ COLOR_ALPHA(themeListBg(vitashell_config.theme_preset), 100) : themeListBg(vitas
       vita2d_draw_rectangle(btn_rx, btn_plus_y, btn_size, btn_size, tb_card);
       vita2d_draw_rectangle(btn_rx, btn_plus_y, btn_size, 2, tb_acc);
       vita2d_draw_rectangle(btn_rx, btn_plus_y+btn_size-1, btn_size, 1, COLOR_ALPHA(tb_text, 10));
-      if (button_plus) {
+      if (lgActive() && lg_plus_icon) {
+        float t = 30.0f, s = t / (float)vita2d_texture_get_width(lg_plus_icon);
+        vita2d_draw_texture_tint_scale(lg_plus_icon, btn_rx + (btn_size - t) / 2, btn_plus_y + (btn_size - t) / 2, s, s, tb_text);
+      } else if (button_plus) {
         int pw = vita2d_texture_get_width(button_plus);
         int ph = vita2d_texture_get_height(button_plus);
         vita2d_draw_texture(button_plus, (float)(btn_rx + (btn_size - pw) / 2), (float)(btn_plus_y + (btn_size - ph) / 2));
@@ -2656,7 +2690,10 @@ COLOR_ALPHA(themeListBg(vitashell_config.theme_preset), 100) : themeListBg(vitas
       vita2d_draw_rectangle(btn_rx, btn_bmk_y, btn_size, btn_size, tb_card);
       vita2d_draw_rectangle(btn_rx, btn_bmk_y, btn_size, 2, bmk_col);
       vita2d_draw_rectangle(btn_rx, btn_bmk_y+btn_size-1, btn_size, 1, COLOR_ALPHA(tb_text, 10));
-      if (button_fav) {
+      if (lgActive() && lg_bookmark_icon) {
+        float t = 30.0f, s = t / (float)vita2d_texture_get_width(lg_bookmark_icon);
+        vita2d_draw_texture_tint_scale(lg_bookmark_icon, btn_rx + (btn_size - t) / 2, btn_bmk_y + (btn_size - t) / 2, s, s, tb_text);
+      } else if (button_fav) {
         int fw = vita2d_texture_get_width(button_fav);
         int fh = vita2d_texture_get_height(button_fav);
         vita2d_draw_texture(button_fav, (float)(btn_rx + (btn_size - fw) / 2), (float)(btn_bmk_y + (btn_size - fh) / 2));
@@ -2684,9 +2721,15 @@ COLOR_ALPHA(themeListBg(vitashell_config.theme_preset), 100) : themeListBg(vitas
     }
 
     // Mouse cursor (drawn last, on top of everything) — 30% maior
-    if (mouse_visible && mouse_tex) {
-      float ms = 1.3f;
-      vita2d_draw_texture_scale(mouse_tex, mouse_x, mouse_y, ms, ms);
+    if (mouse_visible) {
+      if (lgActive() && lg_cursor_icon) {
+        float t = 32.0f, s = t / (float)vita2d_texture_get_width(lg_cursor_icon);
+        vita2d_draw_texture_tint_scale(lg_cursor_icon, mouse_x, mouse_y, s, s,
+                                       themeTopbarText(vitashell_config.theme_preset));
+      } else if (mouse_tex) {
+        float ms = 1.3f;
+        vita2d_draw_texture_scale(mouse_tex, mouse_x, mouse_y, ms, ms);
+      }
     }
 
 

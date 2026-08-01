@@ -437,10 +437,17 @@ void drawShellInfo(const char *path) {
     sx -= pgf_text_width(ts);
     pgf_draw_text(sx, 8, DATE_TIME_COLOR, ts);
     sx -= STATUS_BAR_SPACE_X;
-    if (ftpvita_is_initialized() && ftp_image) {
-      sx -= vita2d_texture_get_width(ftp_image);
-      vita2d_draw_texture(ftp_image, sx, 7);
-      sx -= STATUS_BAR_SPACE_X;
+    if (ftpvita_is_initialized()) {
+      if (vitashell_config.theme_preset == THEME_PRESET_LIQUID_GLASS && lg_ftp_icon) {
+        float t = 22.0f, s = t / (float)vita2d_texture_get_width(lg_ftp_icon);
+        sx -= (int)t;
+        vita2d_draw_texture_tint_scale(lg_ftp_icon, sx, 6, s, s, themeTopbarText(vitashell_config.theme_preset));
+        sx -= STATUS_BAR_SPACE_X;
+      } else if (ftp_image) {
+        sx -= vita2d_texture_get_width(ftp_image);
+        vita2d_draw_texture(ftp_image, sx, 7);
+        sx -= STATUS_BAR_SPACE_X;
+      }
     }
     if (sceKernelGetModel() == SCE_KERNEL_MODEL_VITA) {
       sx -= vita2d_texture_get_width(battery_image);

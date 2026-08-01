@@ -45,6 +45,16 @@ INCLUDE_EXTERN_RESOURCE(default_sfo_icon_png);
 INCLUDE_EXTERN_RESOURCE(default_text_icon_png);
 INCLUDE_EXTERN_RESOURCE(default_button_fav_png);
 INCLUDE_EXTERN_RESOURCE(default_button_plus_png);
+// Liquid Glass icon set
+INCLUDE_EXTERN_RESOURCE(default_lg_folder_png);
+INCLUDE_EXTERN_RESOURCE(default_lg_root_png);
+INCLUDE_EXTERN_RESOURCE(default_lg_parent_png);
+INCLUDE_EXTERN_RESOURCE(default_lg_vpk_png);
+INCLUDE_EXTERN_RESOURCE(default_lg_encrypted_png);
+INCLUDE_EXTERN_RESOURCE(default_lg_bookmark_png);
+INCLUDE_EXTERN_RESOURCE(default_lg_plus_png);
+INCLUDE_EXTERN_RESOURCE(default_lg_cursor_png);
+INCLUDE_EXTERN_RESOURCE(default_lg_ftp_png);
 
 // Shell colors
 int BACKGROUND_COLOR;
@@ -118,6 +128,11 @@ vita2d_texture *folder_icon = NULL, *folder_symlink_icon = NULL, *file_icon = NU
          *bg_photo_image = NULL, *bg_audio_image = NULL, *cover_image = NULL, *play_image = NULL, *pause_image = NULL, *fastforward_image = NULL, *fastrewind_image = NULL,
     *button_fav = NULL, *button_plus = NULL;
 
+// Liquid Glass icon set (used only when theme preset is Liquid Glass)
+vita2d_texture *lg_folder_icon = NULL, *lg_root_icon = NULL, *lg_parent_icon = NULL,
+    *lg_vpk_icon = NULL, *lg_encrypted_icon = NULL, *lg_bookmark_icon = NULL,
+    *lg_plus_icon = NULL, *lg_cursor_icon = NULL, *lg_ftp_icon = NULL;
+
 vita2d_texture *wallpaper_image;
 
 vita2d_texture *previous_wallpaper_image = NULL, *current_wallpaper_image = NULL;
@@ -164,6 +179,15 @@ ThemeImage theme_images[] = {
   { "button_fav.png", &_binary_resources_default_button_fav_png_start, &button_fav },
   { "button_plus.png", &_binary_resources_default_button_plus_png_start, &button_plus },
   { "text_icon.png", &_binary_resources_default_text_icon_png_start, &text_icon },
+  { "lg_folder.png", &_binary_resources_default_lg_folder_png_start, &lg_folder_icon },
+  { "lg_root.png", &_binary_resources_default_lg_root_png_start, &lg_root_icon },
+  { "lg_parent.png", &_binary_resources_default_lg_parent_png_start, &lg_parent_icon },
+  { "lg_vpk.png", &_binary_resources_default_lg_vpk_png_start, &lg_vpk_icon },
+  { "lg_encrypted.png", &_binary_resources_default_lg_encrypted_png_start, &lg_encrypted_icon },
+  { "lg_bookmark.png", &_binary_resources_default_lg_bookmark_png_start, &lg_bookmark_icon },
+  { "lg_plus.png", &_binary_resources_default_lg_plus_png_start, &lg_plus_icon },
+  { "lg_cursor.png", &_binary_resources_default_lg_cursor_png_start, &lg_cursor_icon },
+  { "lg_ftp.png", &_binary_resources_default_lg_ftp_png_start, &lg_ftp_icon },
   { "wallpaper.png", NULL, &wallpaper_image },
 };
 

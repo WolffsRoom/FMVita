@@ -45,7 +45,7 @@ static char *select_button_options[3];
 static char *bg_anim_options[9];
 static char *transition_mode_options[4];
 static char *view_mode_options[4];
-static char *theme_preset_options[8];
+static char *theme_preset_options[9];
 
 static char *language_options[20];
 
@@ -235,6 +235,7 @@ static void refreshSettingsLangStrings() {
   theme_preset_options[5] = language_container[THEME_BROWN];
   theme_preset_options[6] = language_container[THEME_GRAY];
   theme_preset_options[7] = language_container[THEME_CUSTOM];
+  theme_preset_options[8] = language_container[THEME_LIQUID_GLASS];
 
 }
 

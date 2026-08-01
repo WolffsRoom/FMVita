@@ -239,6 +239,7 @@ enum LanguageContainer {
   THEME_BROWN,
   THEME_GRAY,
   THEME_CUSTOM,
+  THEME_LIQUID_GLASS,
 
   // USB strings
   USB_CONNECTED,
