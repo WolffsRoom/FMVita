@@ -93,6 +93,7 @@ extern vita2d_texture *folder_icon, *file_icon, *archive_icon, *image_icon, *aud
 
 extern vita2d_texture *lg_folder_icon, *lg_root_icon, *lg_parent_icon, *lg_vpk_icon,
     *lg_encrypted_icon, *lg_bookmark_icon, *lg_plus_icon, *lg_cursor_icon, *lg_ftp_icon;
+extern int lg_icons_active;
 
 extern vita2d_texture *wallpaper_image;
 extern vita2d_texture *previous_wallpaper_image, *current_wallpaper_image;

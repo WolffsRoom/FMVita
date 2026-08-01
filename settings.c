@@ -45,7 +45,7 @@ static char *select_button_options[3];
 static char *bg_anim_options[9];
 static char *transition_mode_options[4];
 static char *view_mode_options[4];
-static char *theme_preset_options[9];
+static char *theme_preset_options[8];
 
 static char *language_options[20];
 
@@ -235,7 +235,6 @@ static void refreshSettingsLangStrings() {
   theme_preset_options[5] = language_container[THEME_BROWN];
   theme_preset_options[6] = language_container[THEME_GRAY];
   theme_preset_options[7] = language_container[THEME_CUSTOM];
-  theme_preset_options[8] = language_container[THEME_LIQUID_GLASS];
 
 }
 
@@ -263,13 +262,12 @@ void openSettingsMenu() {
 
   // Find all themes
   if (theme_index >= 0) {
+    theme_count = 0;
+    theme = 0;
+
     SceUID dfd = sceIoDopen("ux0:FMVita/theme");
     if (dfd >= 0) {
-      theme_count = 0;
-      theme = 0;
-
       int res = 0;
-
       do {
         SceIoDirent dir;
         memset(&dir, 0, sizeof(SceIoDirent));
@@ -279,19 +277,27 @@ void openSettingsMenu() {
           if (SCE_S_ISDIR(dir.d_stat.st_mode)) {
             if (theme_name && strcasecmp(dir.d_name, theme_name) == 0)
               theme = theme_count;
-            
+
             strncpy(theme_options[theme_count], dir.d_name, MAX_THEME_LENGTH);
             theme_count++;
           }
         }
       } while (res > 0 && theme_count < MAX_THEMES);
-      
+
       sceIoDclose(dfd);
-      
-      main_settings[theme_index].options = theme_options;
-      main_settings[theme_index].n_options = theme_count;
-      main_settings[theme_index].value = &theme;
     }
+
+    // Built-in "Icons" theme (dedicated icon set, no ux0 folder needed)
+    if (theme_count < MAX_THEMES) {
+      strncpy(theme_options[theme_count], "Icons", MAX_THEME_LENGTH);
+      if (theme_name && strcasecmp("Icons", theme_name) == 0)
+        theme = theme_count;
+      theme_count++;
+    }
+
+    main_settings[theme_index].options = theme_options;
+    main_settings[theme_index].n_options = theme_count;
+    main_settings[theme_index].value = &theme;
   }
 
   changed = 0;
@@ -586,6 +592,11 @@ void settingsMenuCtrl() {
       loadLanguage(getEffectiveLanguage());
       refreshSettingsLangStrings();
       language_changed = 1;
+    }
+
+    // If the theme changed, update the "Icons" set live
+    if (option->name == VITASHELL_SETTINGS_THEME && theme_options && theme >= 0) {
+      lg_icons_active = (strcasecmp(theme_options[theme], "Icons") == 0);
     }
   }
 

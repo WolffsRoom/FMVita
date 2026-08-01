@@ -438,7 +438,7 @@ void drawShellInfo(const char *path) {
     pgf_draw_text(sx, 8, DATE_TIME_COLOR, ts);
     sx -= STATUS_BAR_SPACE_X;
     if (ftpvita_is_initialized()) {
-      if (vitashell_config.theme_preset == THEME_PRESET_LIQUID_GLASS && lg_ftp_icon) {
+      if (lg_icons_active && lg_ftp_icon) {
         float t = 22.0f, s = t / (float)vita2d_texture_get_width(lg_ftp_icon);
         sx -= (int)t;
         vita2d_draw_texture_tint_scale(lg_ftp_icon, sx, 6, s, s, themeTopbarText(vitashell_config.theme_preset));

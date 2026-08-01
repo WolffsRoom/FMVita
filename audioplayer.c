@@ -506,6 +506,10 @@ int audioPlayer(const char *file, int type, FileList *list, FileListEntry *entry
     unsigned int card = COLOR_ALPHA(themeCardBg(vitashell_config.theme_preset), 160);
     unsigned int topbar_text = themeTopbarText(vitashell_config.theme_preset);
 
+    // Card panel behind cover + metadata for depth
+    vita2d_draw_rectangle(SHELL_MARGIN_X - 8, START_Y - 12, SCREEN_WIDTH - 2 * (SHELL_MARGIN_X - 8), cover_size + 24, COLOR_ALPHA(themeCardBg(vitashell_config.theme_preset), 120));
+    vita2d_draw_rectangle(SHELL_MARGIN_X - 8, START_Y - 12, SCREEN_WIDTH - 2 * (SHELL_MARGIN_X - 8), 2, COLOR_ALPHA(accent, 120));
+
     // Cover with subtle border
     if (tex) {
       vita2d_draw_rectangle(SHELL_MARGIN_X - 2, START_Y - 2, cover_size + 4, cover_size + 4, COLOR_ALPHA(accent, 40));
@@ -529,7 +533,7 @@ int audioPlayer(const char *file, int type, FileList *list, FileListEntry *entry
     vita2d_set_clip_rectangle(x + 1.0f, START_Y, x + 1.0f + 390.0f, START_Y + (5 * FONT_Y_SPACE));
 
     float title_x = x;
-    uint32_t color = AUDIO_INFO;
+    uint32_t color = COLOR_ALPHA(topbar_text, 255); // brighter, emphasized title
 
     int width = (int)pgf_text_width(fileinfo->title);
     if (width >= 390.0f) {
@@ -649,8 +653,9 @@ int audioPlayer(const char *file, int type, FileList *list, FileListEntry *entry
       float fill_w = pct_f * prog_bar_w;
       if (fill_w < 2) fill_w = 2;
       vita2d_draw_rectangle(prog_bar_x, prog_bar_y, fill_w, prog_bar_h, AUDIO_TIME_BAR);
-      // Thumb indicator
-      vita2d_draw_rectangle(prog_bar_x + fill_w - 4, prog_bar_y - 2, 8, prog_bar_h + 4, accent);
+      // Round thumb indicator
+      vita2d_draw_fill_circle(prog_bar_x + fill_w, prog_bar_y + prog_bar_h / 2.0f, 8.0f, accent);
+      vita2d_draw_fill_circle(prog_bar_x + fill_w, prog_bar_y + prog_bar_h / 2.0f, 4.0f, COLOR_ALPHA(topbar_text, 230));
     }
 
     // End drawing

@@ -389,7 +389,7 @@ void setFocusOnFilename(const char *name) {
 }
 
 // --- Liquid Glass helpers ---
-static inline int lgActive() { return vitashell_config.theme_preset == THEME_PRESET_LIQUID_GLASS; }
+static inline int lgActive() { return lg_icons_active; }
 static int lgIsDeviceRoot(const char *name) {
   int n = name ? strlen(name) : 0;
   return (n > 1 && name[n - 1] == ':'); // e.g. "ux0:", "uma0:"
@@ -1420,14 +1420,14 @@ int browserMain() {
           int btn_rx = SCREEN_WIDTH - 20 - btn_size;
           int btn_plus_y = SCREEN_HEIGHT - STATUSBAR_H - 12 - btn_size;
           int btn_bmk_y = btn_plus_y - btn_size - btn_gap;
-          if (mx >= btn_rx && mx < btn_rx + btn_size && my >= btn_plus_y && my < btn_plus_y + btn_size) {
+          if (mx >= btn_rx - 16 && mx < btn_rx + btn_size + 8 && my >= btn_plus_y - 10 && my < btn_plus_y + btn_size + 10) {
             if (dir_level > 0) {
               setContextMenu(&context_menu_new);
               setContextMenuNewVisibilities();
               setContextMenuMode(CONTEXT_MENU_OPENING);
             }
             pressed_pad[PAD_ENTER] = 0;
-          } else if (mx >= btn_rx && mx < btn_rx + btn_size && my >= btn_bmk_y && my < btn_bmk_y + btn_size) {
+          } else if (mx >= btn_rx - 16 && mx < btn_rx + btn_size + 8 && my >= btn_bmk_y - 10 && my < btn_bmk_y + btn_size + 10) {
             SceInt64 now = sceKernelGetSystemTimeWide();
             if (now - time_last_bookmarks > THRESHOLD_LAST_PAD_BOOKMARKS_WAIT) {
               if (strncmp(file_list.path, VITASHELL_BOOKMARKS_PATH, MAX_PATH_LENGTH) != 0) {
@@ -1544,11 +1544,11 @@ int browserMain() {
                   int btn_rx = SCREEN_WIDTH - 20 - btn_size;
                   int btn_plus_y = SCREEN_HEIGHT - STATUSBAR_H - 12 - btn_size;
                   int btn_bmk_y = btn_plus_y - btn_size - btn_gap;
-                  if (!touch_handled && tx >= btn_rx && tx < btn_rx + btn_size && ty >= btn_plus_y && ty < btn_plus_y + btn_size) {
+                  if (!touch_handled && tx >= btn_rx - 16 && tx < btn_rx + btn_size + 8 && ty >= btn_plus_y - 10 && ty < btn_plus_y + btn_size + 10) {
                       touch_handled = 1;
                       if (dir_level > 0) { setContextMenu(&context_menu_new); setContextMenuNewVisibilities(); setContextMenuMode(CONTEXT_MENU_OPENING); }
                       is_touching = 0; goto skip_touch_processing;
-                  } else if (!touch_handled && tx >= btn_rx && tx < btn_rx + btn_size && ty >= btn_bmk_y && ty < btn_bmk_y + btn_size) {
+                  } else if (!touch_handled && tx >= btn_rx - 16 && tx < btn_rx + btn_size + 8 && ty >= btn_bmk_y - 10 && ty < btn_bmk_y + btn_size + 10) {
                       touch_handled = 1;
                       SceInt64 now = sceKernelGetSystemTimeWide();
                       if (now - time_last_bookmarks > THRESHOLD_LAST_PAD_BOOKMARKS_WAIT) {
@@ -1747,13 +1747,13 @@ skip_touch_processing:
                          int btn_bmk_y = btn_plus_y - btn_size - btn_gap;
                          int tx = touch_x_last, ty = touch_y_last;
  
-                         if (tx >= btn_rx && tx < btn_rx + btn_size && ty >= btn_plus_y && ty < btn_plus_y + btn_size) {
+                         if (tx >= btn_rx - 16 && tx < btn_rx + btn_size + 8 && ty >= btn_plus_y - 10 && ty < btn_plus_y + btn_size + 10) {
                              if (dir_level > 0) {
                                  setContextMenu(&context_menu_new);
                                  setContextMenuNewVisibilities();
                                  setContextMenuMode(CONTEXT_MENU_OPENING);
                              }
-                         } else if (tx >= btn_rx && tx < btn_rx + btn_size && ty >= btn_bmk_y && ty < btn_bmk_y + btn_size) {
+                         } else if (tx >= btn_rx - 16 && tx < btn_rx + btn_size + 8 && ty >= btn_bmk_y - 10 && ty < btn_bmk_y + btn_size + 10) {
                              SceInt64 now = sceKernelGetSystemTimeWide();
                              if (now - time_last_bookmarks > THRESHOLD_LAST_PAD_BOOKMARKS_WAIT) {
                                  if (strncmp(file_list.path, VITASHELL_BOOKMARKS_PATH, MAX_PATH_LENGTH) != 0) {
@@ -2281,7 +2281,8 @@ FONT_Y_SPACE) - (MAX_ENTRIES * FONT_Y_SPACE);
                 vita2d_draw_rectangle(SHELL_MARGIN_X - 10, p_y + 1.0f, 5, FONT_Y_SPACE - 2.0f, RGBA8(255, 200, 50, 235));
                 p_color = RGBA8(255, 235, 150, 255);
             }
-            if (p_icon) vita2d_draw_texture(p_icon, SHELL_MARGIN_X, p_y + 10.0f);
+            if (p_icon) { float t = 22.0f, s = t / (float)vita2d_texture_get_width(p_icon);
+              vita2d_draw_texture_tint_scale(p_icon, SHELL_MARGIN_X, p_y + 8.0f, s, s, COLOR_ALPHA(themeTextColor(vitashell_config.theme_preset), 200)); }
             vita2d_enable_clipping();
             float clip_gp_h = (p_y + FONT_Y_SPACE > SCREEN_HEIGHT - 60) ? (SCREEN_HEIGHT - 60) : (p_y + FONT_Y_SPACE);
             vita2d_set_clip_rectangle(SHELL_MARGIN_X + 28.0f, p_y, SHELL_MARGIN_X + 280.0f, clip_gp_h);
@@ -2340,7 +2341,8 @@ FONT_Y_SPACE) - (MAX_ENTRIES * FONT_Y_SPACE);
                 vita2d_draw_rectangle(ox - 10, p_y + 1.0f, 5, FONT_Y_SPACE - 2.0f, RGBA8(255, 200, 50, 255));
                 p_color = RGBA8(255, 235, 150, 255);
             }
-            if (p_icon) vita2d_draw_texture(p_icon, ox, p_y + 10.0f);
+            if (p_icon) { float t = 22.0f, s = t / (float)vita2d_texture_get_width(p_icon);
+              vita2d_draw_texture_tint_scale(p_icon, ox, p_y + 8.0f, s, s, COLOR_ALPHA(themeTextColor(vitashell_config.theme_preset), 200)); }
             vita2d_enable_clipping();
             float clip_p_h = (p_y + FONT_Y_SPACE > SCREEN_HEIGHT - 60) ? (SCREEN_HEIGHT - 60) : (p_y + FONT_Y_SPACE);
             vita2d_set_clip_rectangle(ox + 28.0f, p_y, ox + col_w - 10.0f, clip_p_h);

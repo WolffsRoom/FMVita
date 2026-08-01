@@ -128,7 +128,10 @@ vita2d_texture *folder_icon = NULL, *folder_symlink_icon = NULL, *file_icon = NU
          *bg_photo_image = NULL, *bg_audio_image = NULL, *cover_image = NULL, *play_image = NULL, *pause_image = NULL, *fastforward_image = NULL, *fastrewind_image = NULL,
     *button_fav = NULL, *button_plus = NULL;
 
-// Liquid Glass icon set (used only when theme preset is Liquid Glass)
+// Set when the "Icons" theme is selected: enables the dedicated icon set.
+int lg_icons_active = 0;
+
+// Liquid Glass / Icons set (used only when the "Icons" theme is active)
 vita2d_texture *lg_folder_icon = NULL, *lg_root_icon = NULL, *lg_parent_icon = NULL,
     *lg_vpk_icon = NULL, *lg_encrypted_icon = NULL, *lg_bookmark_icon = NULL,
     *lg_plus_icon = NULL, *lg_cursor_icon = NULL, *lg_ftp_icon = NULL;
@@ -280,7 +283,9 @@ void loadTheme() {
     // Load theme config
     readConfig("ux0:FMVita/theme/theme.txt", theme_entries, sizeof(theme_entries) / sizeof(ConfigEntry));
 
-    if (theme_name) {
+    lg_icons_active = (theme_name && strcasecmp(theme_name, "Icons") == 0);
+
+    if (theme_name && !lg_icons_active) {
       // Load colors config
       snprintf(path, MAX_PATH_LENGTH, "ux0:FMVita/theme/%s/colors.txt", theme_name);
       readConfig(path, colors_entries, sizeof(colors_entries) / sizeof(ConfigEntry));
