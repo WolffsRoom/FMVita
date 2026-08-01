@@ -2473,7 +2473,12 @@ COLOR_ALPHA(themeListBg(vitashell_config.theme_preset), 100) : themeListBg(vitas
         if (icon) {
           unsigned int tint_color = RGBA8(255, 255, 255, transition_alpha);
           if (vitashell_config.view_mode != 1) {
-            vita2d_draw_texture_tint(icon, cur_margin_x, y + 10.0f, tint_color);
+            // Scale to a fixed list size so high-res icon assets don't render
+            // at their native (large) resolution and break the row layout.
+            float lsz = 26.0f;
+            float iw = (float)vita2d_texture_get_width(icon);
+            float ls = (iw > 0) ? (lsz / iw) : 1.0f;
+            vita2d_draw_texture_tint_scale(icon, cur_margin_x, y + (FONT_Y_SPACE - lsz) / 2.0f, ls, ls, tint_color);
           } else {
             float icon_x = x + (GRID_CELL_W - GRID_ICON_SIZE) / 2.0f;
             float icon_y = y + 4;
