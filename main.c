@@ -485,13 +485,19 @@ void drawShellInfo(const char *path) {
       int cur_bw = (bi == 7) ? (2 * bw + gap) : bw;  // Search is double width
       int disabled = (is_root && bi < 5);
 
-      int active = (bi == toolbar_press_btn || bi == toolbar_hover_btn);
+      // A toggled Filter (not "All") or an active Search stays lit so it's
+      // clear the view is being limited.
+      int active = (bi == toolbar_press_btn || bi == toolbar_hover_btn)
+                   || (bi == 5 && filter_mode > 0)
+                   || (bi == 7 && search_active);
+      unsigned int btn_fill = COLOR_ALPHA(themeCardBg(vitashell_config.theme_preset), 160);
       if (!disabled) {
         if (active) {
-          vita2d_draw_rectangle(bx, aby, cur_bw, abh, COLOR_ALPHA(ab_colors[bi], 200));
+          btn_fill = COLOR_ALPHA(ab_colors[bi], 200);
+          vita2d_draw_rectangle(bx, aby, cur_bw, abh, btn_fill);
           vita2d_draw_rectangle(bx, aby, cur_bw, 2, RGBA8(255,255,255,60));
         } else {
-          vita2d_draw_rectangle(bx, aby, cur_bw, abh, COLOR_ALPHA(themeCardBg(vitashell_config.theme_preset), 160));
+          vita2d_draw_rectangle(bx, aby, cur_bw, abh, btn_fill);
           vita2d_draw_rectangle(bx, aby, cur_bw, 2, ab_colors[bi]);
           vita2d_draw_rectangle(bx, aby+abh-1, cur_bw, 1, COLOR_ALPHA(t_txt, 8));
         }
@@ -515,7 +521,20 @@ void drawShellInfo(const char *path) {
       }
       unsigned int tc = disabled ? COLOR_ALPHA(themeTextDim(vitashell_config.theme_preset), 120) : themeTextColor(vitashell_config.theme_preset);
       float lw = pgf_text_width(lbl);
-      pgf_draw_text(bx + (cur_bw - lw)/2.0f, aby+8, tc, lbl);
+      if (bi == 7) {
+        // Search: magnifier (lupa) icon + label, centered together
+        float lupa_w = 15.0f, gapx = 6.0f;
+        float total = lupa_w + gapx + lw;
+        float gx = bx + (cur_bw - total) / 2.0f;
+        float rcx = gx + 6.0f, rcy = aby + abh / 2.0f - 1.0f;
+        vita2d_draw_fill_circle(rcx, rcy, 6.0f, tc);              // ring outer
+        vita2d_draw_fill_circle(rcx, rcy, 3.5f, btn_fill);        // ring hole
+        vita2d_draw_line(rcx + 4.0f, rcy + 4.0f, rcx + 9.0f, rcy + 9.0f, tc); // handle
+        vita2d_draw_line(rcx + 5.0f, rcy + 4.0f, rcx + 10.0f, rcy + 9.0f, tc);
+        pgf_draw_text(gx + lupa_w + gapx, aby + 8, tc, lbl);
+      } else {
+        pgf_draw_text(bx + (cur_bw - lw)/2.0f, aby+8, tc, lbl);
+      }
     }
   }
 

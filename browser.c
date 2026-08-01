@@ -1461,7 +1461,7 @@ int browserMain() {
         last_ctx_menu_mode = getContextMenuMode();
     }
 
-    if (getDialogStep() == DIALOG_STEP_NONE) {
+    if (getDialogStep() == DIALOG_STEP_NONE && getSettingsMenuStatus() == SETTINGS_MENU_CLOSED) {
       if (getContextMenuMode() != CONTEXT_MENU_CLOSED) {
         // Context menu aberto: captura toque para selecionar itens
         if (touch.reportNum > 0) {
