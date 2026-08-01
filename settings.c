@@ -166,6 +166,11 @@ void loadSettingsConfig() {
   vitashell_config.page_speed = 30;
   vitashell_config.scroll_loop = 1;
   readConfig("ux0:FMVita/settings.txt", settings_entries, sizeof(settings_entries) / sizeof(ConfigEntry));
+
+  // Clamp options to valid ranges so a stale saved value (e.g. the removed
+  // Liquid Glass preset = 8) can't index past its options array and crash.
+  if (vitashell_config.theme_preset < 0 || vitashell_config.theme_preset > THEME_PRESET_CUSTOM)
+    vitashell_config.theme_preset = THEME_PRESET_DARK;
 }
 
 void saveSettingsConfig() {
