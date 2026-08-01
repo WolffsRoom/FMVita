@@ -55,6 +55,9 @@ INCLUDE_EXTERN_RESOURCE(default_lg_bookmark_png);
 INCLUDE_EXTERN_RESOURCE(default_lg_plus_png);
 INCLUDE_EXTERN_RESOURCE(default_lg_cursor_png);
 INCLUDE_EXTERN_RESOURCE(default_lg_ftp_png);
+INCLUDE_EXTERN_RESOURCE(default_lg_settings_png);
+INCLUDE_EXTERN_RESOURCE(default_lg_music_png);
+INCLUDE_EXTERN_RESOURCE(default_lg_download_png);
 
 // Shell colors
 int BACKGROUND_COLOR;
@@ -134,7 +137,8 @@ int lg_icons_active = 0;
 // Liquid Glass / Icons set (used only when the "Icons" theme is active)
 vita2d_texture *lg_folder_icon = NULL, *lg_root_icon = NULL, *lg_parent_icon = NULL,
     *lg_vpk_icon = NULL, *lg_encrypted_icon = NULL, *lg_bookmark_icon = NULL,
-    *lg_plus_icon = NULL, *lg_cursor_icon = NULL, *lg_ftp_icon = NULL;
+    *lg_plus_icon = NULL, *lg_cursor_icon = NULL, *lg_ftp_icon = NULL,
+    *lg_settings_icon = NULL, *lg_music_icon = NULL, *lg_download_icon = NULL;
 
 vita2d_texture *wallpaper_image;
 
@@ -191,6 +195,9 @@ ThemeImage theme_images[] = {
   { "lg_plus.png", &_binary_resources_default_lg_plus_png_start, &lg_plus_icon },
   { "lg_cursor.png", &_binary_resources_default_lg_cursor_png_start, &lg_cursor_icon },
   { "lg_ftp.png", &_binary_resources_default_lg_ftp_png_start, &lg_ftp_icon },
+  { "lg_settings.png", &_binary_resources_default_lg_settings_png_start, &lg_settings_icon },
+  { "lg_music.png", &_binary_resources_default_lg_music_png_start, &lg_music_icon },
+  { "lg_download.png", &_binary_resources_default_lg_download_png_start, &lg_download_icon },
   { "wallpaper.png", NULL, &wallpaper_image },
 };
 

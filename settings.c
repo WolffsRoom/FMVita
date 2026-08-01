@@ -42,8 +42,8 @@ static int n_settings_entries = 0;
 
 static char *usbdevice_options[4];
 static char *select_button_options[3];
-static char *bg_anim_options[9];
-static char *transition_mode_options[4];
+static char *bg_anim_options[12];
+static char *transition_mode_options[6];
 static char *view_mode_options[4];
 static char *theme_preset_options[8];
 
@@ -99,7 +99,7 @@ SettingsMenuOption main_settings[] = {
   { VITASHELL_SETTINGS_SELECT_BUTTON,   SETTINGS_OPTION_TYPE_OPTIONS, NULL, NULL, 0,
     select_button_options, sizeof(select_button_options) / sizeof(char **), &vitashell_config.select_button },
   { VITASHELL_SETTINGS_TRANSITION_MODE, SETTINGS_OPTION_TYPE_OPTIONS, NULL, NULL, 0,
-    transition_mode_options, 4, &vitashell_config.transition_mode },
+    transition_mode_options, 6, &vitashell_config.transition_mode },
   { VITASHELL_SETTINGS_THEME,           SETTINGS_OPTION_TYPE_OPTIONS, NULL, NULL, 0,
     NULL, 0, NULL },
 
@@ -221,11 +221,16 @@ static void refreshSettingsLangStrings() {
   bg_anim_options[6] = language_container[BG_ANIM_RAIN];
   bg_anim_options[7] = language_container[BG_ANIM_GIF];
   bg_anim_options[8] = language_container[BG_ANIM_PNG];
+  bg_anim_options[9] = language_container[BG_ANIM_BUBBLES];
+  bg_anim_options[10] = language_container[BG_ANIM_SNOW];
+  bg_anim_options[11] = language_container[BG_ANIM_FIREFLIES];
 
   transition_mode_options[0] = language_container[TRANSITION_OFF];
   transition_mode_options[1] = language_container[TRANSITION_LATERAL];
   transition_mode_options[2] = language_container[TRANSITION_SOFT];
   transition_mode_options[3] = language_container[TRANSITION_FADE];
+  transition_mode_options[4] = language_container[TRANSITION_VERTICAL];
+  transition_mode_options[5] = language_container[TRANSITION_DIAGONAL];
 
   view_mode_options[0] = language_container[VIEW_MODE_LIST];
   view_mode_options[1] = language_container[VIEW_MODE_GRID];

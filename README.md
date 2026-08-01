@@ -248,6 +248,7 @@ export VITASDK=/usr/local/vitasdk
 * **Team Molecule** — HENkaku.
 * **xerpi** — ftpvitalib and vita2dlib libraries.
 * **Sean Barrett** — stb_image implementation.
+* **[Icons8](https://icons8.com.br/icons/set/edi%C3%A7%C3%A3o--style-liquid-glass)** — "Liquid Glass" style icon set used by the **Icons** theme.
 * **WolffsRoom** — FMVita development, visual modifications, and engine.
 
 ---

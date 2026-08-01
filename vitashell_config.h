@@ -37,6 +37,8 @@ enum TransitionModes {
   TRANSITION_MODE_SLIDE,
   TRANSITION_MODE_SMOOTH_SLIDE,
   TRANSITION_MODE_FADE,
+  TRANSITION_MODE_VSLIDE,   // vertical slide
+  TRANSITION_MODE_DIAGONAL, // horizontal + vertical
 };
 
 typedef struct {

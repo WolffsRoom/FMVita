@@ -66,6 +66,7 @@ INCLUDE_EXTERN_RESOURCE(default_mouse_png);
 void captureFolderTransition(int dir);
 void updateFolderTransition();
 static float transition_offset_x = 0.0f;
+static float transition_offset_y = 0.0f;
 static unsigned char transition_alpha = 255;
 
 #define MAX_TRANSITION_ENTRIES 60
@@ -398,6 +399,17 @@ static int lgIsEncryptedName(const char *name) {
   return name && (strcmp(name, "app") == 0 || strcmp(name, "patch") == 0 ||
                   strcmp(name, "addcont") == 0 || strcmp(name, "appmeta") == 0 ||
                   strcmp(name, "user") == 0);
+}
+static int lgIsDownloadsName(const char *name) {
+  return name && (strcasecmp(name, "download") == 0 ||
+                  strcasecmp(name, "downloads") == 0);
+}
+static int lgIsSettingsExt(const char *name) {
+  const char *ext = name ? strrchr(name, '.') : NULL;
+  if (!ext) return 0;
+  return (strcasecmp(ext, ".bak") == 0 || strcasecmp(ext, ".bin") == 0 ||
+          strcasecmp(ext, ".win") == 0 || strcasecmp(ext, ".psarc") == 0 ||
+          strcasecmp(ext, ".ark") == 0);
 }
 static int lgInEncryptedArea(const char *path) {
   return path && (strcasestr(path, "/app/") || strcasestr(path, ":app/") ||
@@ -1246,12 +1258,14 @@ void captureFolderTransition(int dir) {
   transition_active = 1;
   transition_ready = 0;
   transition_offset_x = 0.0f;
+    transition_offset_y = 0.0f;
   transition_alpha = 255;
 }
 
 void updateFolderTransition() {
   if (!transition_active) {
     transition_offset_x = 0.0f;
+    transition_offset_y = 0.0f;
     transition_alpha = 255;
     return;
   }
@@ -1271,10 +1285,18 @@ void updateFolderTransition() {
     case TRANSITION_MODE_FADE:
       step = 0.12f;
       break;
+    case TRANSITION_MODE_VSLIDE:
+      step = 0.12f;
+      break;
+    case TRANSITION_MODE_DIAGONAL:
+      step = 0.10f;
+      alpha_effect = 1;
+      break;
     default:
       transition_active = 0;
       transition_ready = 1;
       transition_offset_x = 0.0f;
+    transition_offset_y = 0.0f;
       transition_alpha = 255;
       return;
   }
@@ -1285,15 +1307,22 @@ void updateFolderTransition() {
     transition_active = 0;
     transition_ready = 1;
     transition_offset_x = 0.0f;
+    transition_offset_y = 0.0f;
     transition_alpha = 255;
     return;
   }
 
   if (mode == TRANSITION_MODE_FADE) {
     transition_offset_x = 0.0f;
+    transition_offset_y = 0.0f;
     transition_alpha = (unsigned char)(transition_progress * 255.0f);
+  } else if (mode == TRANSITION_MODE_VSLIDE) {
+    // Vertical slide: in from bottom when entering, from top when going up
+    transition_offset_x = 0.0f;
+    transition_offset_y = (transition_dir == 0 ? 1.0f : -1.0f) * (1.0f - transition_progress) * SCREEN_HEIGHT;
+    transition_alpha = 255;
   } else {
-    // Slide modes
+    // Slide modes (horizontal, and diagonal adds a vertical component)
     if (transition_dir == 0) {
       // Entering directory: slide in from right
       transition_offset_x = (1.0f - transition_progress) * SCREEN_WIDTH;
@@ -1301,7 +1330,9 @@ void updateFolderTransition() {
       // Going up directory: slide in from left
       transition_offset_x = -(1.0f - transition_progress) * SCREEN_WIDTH;
     }
-    
+    transition_offset_y = (mode == TRANSITION_MODE_DIAGONAL)
+                          ? (1.0f - transition_progress) * SCREEN_HEIGHT * 0.4f : 0.0f;
+
     if (alpha_effect) {
       transition_alpha = (unsigned char)(transition_progress * 255.0f);
     } else {
@@ -2040,7 +2071,7 @@ FONT_Y_SPACE) - (MAX_ENTRIES * FONT_Y_SPACE);
     startDrawing(NULL);
 
     // Background / GIF / Animation
-    if (vitashell_config.background_anim >= 7) {
+    if (vitashell_config.background_anim == 7 || vitashell_config.background_anim == 8) {
       drawGifBackground();
     } else {
       drawGifBackground();
@@ -2188,6 +2219,39 @@ FONT_Y_SPACE) - (MAX_ENTRIES * FONT_Y_SPACE);
           float len = 10.0f + (i % 6) * 3.0f;
           vita2d_draw_line(x, y, x - 4, y + len, RGBA8(100, 200, 255, alpha));
           vita2d_draw_fill_circle(x, y, 2.5f, RGBA8(180, 230, 255, alpha + 30));
+        }
+      } else if (vitashell_config.background_anim == 9) {
+        // Bubbles (bolhas) — rising translucent circles with a highlight
+        for (int i = 0; i < 28; i++) {
+          float speed = 0.5f + (i % 6) * 0.18f;
+          float base_x = (i * 71 + 19) % SCREEN_WIDTH;
+          float sz = 8.0f + (i % 8) * 4.0f;
+          float x = base_x + sinf(wave_time * speed + i * 1.3f) * 22.0f;
+          float y = SCREEN_HEIGHT + sz - fmodf(wave_time * 40.0f * speed + i * 57.0f, SCREEN_HEIGHT + sz * 2);
+          int alpha = 24 + (int)((sinf(wave_time + i) + 1.0f) * 18.0f);
+          vita2d_draw_fill_circle(x, y, sz, RGBA8(120, 200, 255, alpha));
+          vita2d_draw_fill_circle(x - sz * 0.3f, y - sz * 0.3f, sz * 0.28f, RGBA8(230, 245, 255, alpha + 40));
+        }
+      } else if (vitashell_config.background_anim == 10) {
+        // Snow (neve) — soft drifting flakes
+        for (int i = 0; i < 70; i++) {
+          float speed = 0.6f + (i % 5) * 0.25f;
+          float base_x = (i * 37 + 11) % SCREEN_WIDTH;
+          float x = base_x + sinf(wave_time * 0.6f + i * 0.9f) * 26.0f;
+          float y = fmodf(wave_time * 26.0f * speed + i * 41.0f, SCREEN_HEIGHT + 20) - 10;
+          float sz = 1.5f + (i % 4);
+          int alpha = 60 + (i % 5) * 30;
+          vita2d_draw_fill_circle(x, y, sz, RGBA8(235, 240, 255, alpha));
+        }
+      } else if (vitashell_config.background_anim == 11) {
+        // Fireflies (vaga-lumes) — wandering glow points that pulse
+        for (int i = 0; i < 26; i++) {
+          float px = (SCREEN_WIDTH * 0.5f) + sinf(wave_time * (0.2f + (i % 5) * 0.05f) + i * 2.1f) * (140 + (i % 7) * 30);
+          float py = (SCREEN_HEIGHT * 0.5f) + cosf(wave_time * (0.17f + (i % 4) * 0.06f) + i * 1.3f) * (90 + (i % 6) * 25);
+          int pulse = (int)((sinf(wave_time * 2.2f + i * 1.7f) + 1.0f) * 60.0f);
+          int alpha = 20 + pulse;
+          vita2d_draw_fill_circle(px, py, 5.0f, RGBA8(255, 240, 130, alpha / 3));
+          vita2d_draw_fill_circle(px, py, 2.0f, RGBA8(255, 250, 180, alpha));
         }
       }
     }
@@ -2391,7 +2455,7 @@ FONT_Y_SPACE) - (MAX_ENTRIES * FONT_Y_SPACE);
         }
         
         float x = (vitashell_config.view_mode == 2 || vitashell_config.view_mode == 3) ? c_x + 28.0f : FILE_X + transition_offset_x;
-        float y = START_Y + (i * FONT_Y_SPACE) - scroll_y;
+        float y = START_Y + (i * FONT_Y_SPACE) - scroll_y + transition_offset_y;
         float info_x = INFORMATION_X + transition_offset_x;
 
         
@@ -2399,7 +2463,7 @@ FONT_Y_SPACE) - (MAX_ENTRIES * FONT_Y_SPACE);
            int row = i / GRID_COLS;
            int col = i % GRID_COLS;
            x = GRID_START_X + col * (GRID_CELL_W + GRID_GAP) + transition_offset_x;
-           y = START_Y + (row * GRID_CELL_H) - scroll_y + 8;
+           y = START_Y + (row * GRID_CELL_H) - scroll_y + 8 + transition_offset_y;
         }
 
 #ifndef T_ALPHA
@@ -2431,6 +2495,7 @@ COLOR_ALPHA(themeListBg(vitashell_config.theme_preset), 100) : themeListBg(vitas
           if (lg) {
             if (strcmp(file_entry->name, DIR_UP) == 0)        icon = lg_parent_icon;
             else if (lgIsDeviceRoot(file_entry->name))        icon = lg_root_icon;
+            else if (lgIsDownloadsName(file_entry->name))     icon = lg_download_icon;
             else if (lg_enc || lgIsEncryptedName(file_entry->name)) icon = lg_encrypted_icon;
             else                                              icon = lg_folder_icon;
           } else {
@@ -2459,7 +2524,7 @@ COLOR_ALPHA(themeListBg(vitashell_config.theme_preset), 100) : themeListBg(vitas
             case FILE_TYPE_MP3:
             case FILE_TYPE_OGG:
               color = RGBA8(240, 120, 180, 255);
-              icon = audio_icon;
+              icon = lg ? lg_music_icon : audio_icon;
               break;
               
             case FILE_TYPE_SFO:
@@ -2479,6 +2544,9 @@ COLOR_ALPHA(themeListBg(vitashell_config.theme_preset), 100) : themeListBg(vitas
               icon = (lg_enc) ? lg_encrypted_icon : file_icon;
               break;
           }
+          // Icons theme: settings-like data files by extension
+          if (lg && lgIsSettingsExt(file_entry->name))
+            icon = lg_settings_icon;
         }
 
         // Selection Bar (accent blue)

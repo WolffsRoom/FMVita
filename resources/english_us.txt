@@ -216,6 +216,9 @@ BG_ANIM_RAIN                           = "Rain"
 BG_ANIM_GIF                          = "GIF"
 
 BG_ANIM_PNG                          = "PNG"
+BG_ANIM_BUBBLES                     = "Bubbles"
+BG_ANIM_SNOW                        = "Snow"
+BG_ANIM_FIREFLIES                   = "Fireflies"
 
 VIEW_MODE_LIST                       = "List"
 
@@ -239,6 +242,8 @@ TRANSITION_LATERAL                  = "Slide"
 TRANSITION_SOFT                     = "Smooth slide"
 TRANSITION_FADE                     = "Fade"
 TRANSITION_OFF                      = "Off"
+TRANSITION_VERTICAL                 = "Vertical slide"
+TRANSITION_DIAGONAL                 = "Diagonal"
 
 # USB strings
 USB_CONNECTED                        = "USB connected"
