@@ -56,7 +56,7 @@ void drawShellInfo(const char *path);
 
 // VitaShell version major.minor
 #define VITASHELL_VERSION_MAJOR 0x06
-#define VITASHELL_VERSION_MINOR 0x00
+#define VITASHELL_VERSION_MINOR 0x01
 
 #define VITASHELL_VERSION ((VITASHELL_VERSION_MAJOR << 0x18) | (VITASHELL_VERSION_MINOR << 0x10))
 

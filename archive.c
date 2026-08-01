@@ -769,6 +769,16 @@ int extractArchivePath(const char *src_path, const char *dst_path, FileProcessPa
   return 1;
 }
 
+// Set the archive context (path) without building the full node tree, so a
+// caller can read individual entries via ReadArchiveFile() cheaply. Used for
+// the lightweight VPK install preview (avoids the heavy archiveOpen tree).
+void archiveSetContext(const char *file) {
+  is_psarc = 0;
+  archive_path_start = strlen(file) + 1;
+  strncpy(archive_file, file, MAX_PATH_LENGTH - 1);
+  archive_file[MAX_PATH_LENGTH - 1] = '\0';
+}
+
 int archiveFileGetstat(const char *file, SceIoStat *stat) {
   if (is_psarc)
     return psarcFileGetstat(file, stat);

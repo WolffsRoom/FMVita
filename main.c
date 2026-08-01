@@ -1751,55 +1751,48 @@ int dialogSteps() {
   return refresh;
 }
 
+// Basename of an FTP command argument, trimmed of CR/LF.
+static void ftp_arg_basename(const char *arg, char *out, int outsz) {
+  const char *p = strrchr(arg, '/');
+  p = p ? p + 1 : arg;
+  int i = 0;
+  while (p[i] && p[i] != '\r' && p[i] != '\n' && i < outsz - 1) { out[i] = p[i]; i++; }
+  out[i] = '\0';
+}
+
 static void ftp_log_cb(const char *msg) {
-  if (msg) {
-    if (strncmp(msg, "STOR ", 5) == 0) {
-      char *path = strrchr(msg + 5, '/');
-      if (path) path++; else path = (char *)msg + 5;
-      char clean_path[256];
-      strncpy(clean_path, path, 255);
-      clean_path[255] = '\0';
-      int len = strlen(clean_path);
-      while (len > 0 && (clean_path[len-1] == '\r' || clean_path[len-1] == '\n')) {
-        clean_path[len-1] = '\0';
-        len--;
-      }
-      snprintf(ftp_status_msg, 255, "Recebendo: %s", clean_path);
-    } else if (strncmp(msg, "RETR ", 5) == 0) {
-      char *path = strrchr(msg + 5, '/');
-      if (path) path++; else path = (char *)msg + 5;
-      char clean_path[256];
-      strncpy(clean_path, path, 255);
-      clean_path[255] = '\0';
-      int len = strlen(clean_path);
-      while (len > 0 && (clean_path[len-1] == '\r' || clean_path[len-1] == '\n')) {
-        clean_path[len-1] = '\0';
-        len--;
-      }
-      snprintf(ftp_status_msg, 255, "Enviando: %s", clean_path);
-    } else if (strncmp(msg, "DELE ", 5) == 0) {
-      char *path = strrchr(msg + 5, '/');
-      if (path) path++; else path = (char *)msg + 5;
-      char clean_path[256];
-      strncpy(clean_path, path, 255);
-      clean_path[255] = '\0';
-      int len = strlen(clean_path);
-      while (len > 0 && (clean_path[len-1] == '\r' || clean_path[len-1] == '\n')) {
-        clean_path[len-1] = '\0';
-        len--;
-      }
-      snprintf(ftp_status_msg, 255, "Excluindo: %s", clean_path);
-    } else if (strncmp(msg, "MKD ", 4) == 0) {
-      snprintf(ftp_status_msg, 255, "Criando pasta...");
-    } else if (strncmp(msg, "RMD ", 4) == 0) {
-      snprintf(ftp_status_msg, 255, "Removendo pasta...");
-    } else if (strncmp(msg, "RNFR ", 5) == 0 || strncmp(msg, "RNTO ", 5) == 0) {
-      snprintf(ftp_status_msg, 255, "Renomeando...");
-    } else {
-      strncpy(ftp_status_msg, msg, 255);
-    }
-    ftp_status_msg[255] = '\0';
+  if (!msg)
+    return;
+  char name[256];
+  // Translate FTP protocol verbs into friendly, human-readable status.
+  // RETR = client downloading FROM the Vita (Vita sends); STOR = uploading TO it.
+  if (strncmp(msg, "STOR ", 5) == 0) {
+    ftp_arg_basename(msg + 5, name, sizeof(name));
+    snprintf(ftp_status_msg, 255, "Recebendo: %s", name);
+  } else if (strncmp(msg, "RETR ", 5) == 0) {
+    ftp_arg_basename(msg + 5, name, sizeof(name));
+    snprintf(ftp_status_msg, 255, "Enviando: %s", name);
+  } else if (strncmp(msg, "DELE ", 5) == 0) {
+    ftp_arg_basename(msg + 5, name, sizeof(name));
+    snprintf(ftp_status_msg, 255, "Excluindo: %s", name);
+  } else if (strncmp(msg, "CWD ", 4) == 0) {
+    ftp_arg_basename(msg + 4, name, sizeof(name));
+    snprintf(ftp_status_msg, 255, "Pasta: %s", name[0] ? name : "/");
+  } else if (strncmp(msg, "LIST", 4) == 0 || strncmp(msg, "NLST", 4) == 0 ||
+             strncmp(msg, "MLSD", 4) == 0) {
+    snprintf(ftp_status_msg, 255, "Listando arquivos...");
+  } else if (strncmp(msg, "MKD ", 4) == 0) {
+    snprintf(ftp_status_msg, 255, "Criando pasta...");
+  } else if (strncmp(msg, "RMD ", 4) == 0) {
+    snprintf(ftp_status_msg, 255, "Removendo pasta...");
+  } else if (strncmp(msg, "RNFR ", 5) == 0 || strncmp(msg, "RNTO ", 5) == 0) {
+    snprintf(ftp_status_msg, 255, "Renomeando...");
+  } else if (strncmp(msg, "USER ", 5) == 0 || strncmp(msg, "PASS", 4) == 0) {
+    snprintf(ftp_status_msg, 255, "Cliente conectado.");
   }
+  // Any other protocol chatter (TYPE, PASV, PORT, SIZE, SYST, FEAT, ...) is
+  // ignored so the raw command is never shown to the user.
+  ftp_status_msg[255] = '\0';
 }
 
 

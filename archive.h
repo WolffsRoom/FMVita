@@ -34,6 +34,7 @@ int archiveFileRead(SceUID fd, void *data, SceSize size);
 int archiveFileClose(SceUID fd);
 
 int ReadArchiveFile(const char *file, void *buf, int size);
+void archiveSetContext(const char *file);
 
 int archiveClose();
 int archiveOpen(const char *file);

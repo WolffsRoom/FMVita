@@ -14,7 +14,7 @@ project(FileManager)
 include("${VITASDK}/share/vita.cmake" REQUIRED)
 set(VITA_APP_NAME "FileManager")
 set(VITA_TITLEID  "FILEMNGR1")
-set(VITA_VERSION  "06.00")
+set(VITA_VERSION  "06.01")
 
 # Flags and includes
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu11 -Wl,-q -Wall -Os -Wno-unused-variable -Wno-unused-but-set-variable -Wno-format-truncation -fno-lto")

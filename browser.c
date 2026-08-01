@@ -707,46 +707,50 @@ void freeVpkPreviewIcon() {
 
 static void loadVpkPreviewIcon(const char *vpk_path) {
   freeVpkPreviewIcon();
-  // Skip the preview while already browsing inside an archive: archiveOpen()
-  // rebuilds the global archive tree and archiveClose() frees it, which would
-  // corrupt the archive the browser is currently showing.
+  // Skip while already browsing inside an archive (would fight the global
+  // archive context the browser is using).
   if (isInArchive())
     return;
+
+  // Lightweight: set the archive context WITHOUT building the full node tree,
+  // then read the two entries directly. The old archiveOpen() path built the
+  // whole tree, which under memory pressure (e.g. 3-column view) could exhaust
+  // memory and take down the GPU when the preview texture was then drawn.
   archiveClearPassword();
-  if (archiveOpen(vpk_path) < 0)
-    return;
+  archiveSetContext(vpk_path);
 
   char path[MAX_PATH_LENGTH];
-  SceIoStat st;
 
   // Icon
   snprintf(path, sizeof(path), "%s/sce_sys/icon0.png", vpk_path);
-  memset(&st, 0, sizeof(st));
-  if (archiveFileGetstat(path, &st) >= 0 && st.st_size > 0 && st.st_size < 4 * 1024 * 1024) {
-    void *buf = malloc(st.st_size);
-    if (buf) {
-      if (ReadArchiveFile(path, buf, st.st_size) > 0)
-        vpk_preview_icon = vita2d_load_PNG_buffer(buf);
-      free(buf);
+  void *buf = malloc(1024 * 1024);
+  if (buf) {
+    int r = ReadArchiveFile(path, buf, 1024 * 1024);
+    if (r > 0) {
+      vita2d_texture *t = vita2d_load_PNG_buffer(buf);
+      if (t) {
+        unsigned int w = vita2d_texture_get_width(t);
+        unsigned int h = vita2d_texture_get_height(t);
+        if (w > 0 && w <= 1024 && h > 0 && h <= 1024)
+          vpk_preview_icon = t;          // valid texture only
+        else
+          vita2d_free_texture(t);        // reject odd dimensions (GPU-safe)
+      }
     }
+    free(buf);
   }
 
   // App name / title id / version from param.sfo
   snprintf(path, sizeof(path), "%s/sce_sys/param.sfo", vpk_path);
-  memset(&st, 0, sizeof(st));
-  if (archiveFileGetstat(path, &st) >= 0 && st.st_size > 0 && st.st_size < 128 * 1024) {
-    void *sfo = malloc(st.st_size);
-    if (sfo) {
-      if (ReadArchiveFile(path, sfo, st.st_size) > 0) {
-        getSfoString(sfo, "TITLE", vpk_preview_title, sizeof(vpk_preview_title));
-        getSfoString(sfo, "TITLE_ID", vpk_preview_titleid, sizeof(vpk_preview_titleid));
-        getSfoString(sfo, "APP_VER", vpk_preview_version, sizeof(vpk_preview_version));
-      }
-      free(sfo);
+  void *sfo = malloc(64 * 1024);
+  if (sfo) {
+    if (ReadArchiveFile(path, sfo, 64 * 1024) > 0) {
+      getSfoString(sfo, "TITLE", vpk_preview_title, sizeof(vpk_preview_title));
+      getSfoString(sfo, "TITLE_ID", vpk_preview_titleid, sizeof(vpk_preview_titleid));
+      getSfoString(sfo, "APP_VER", vpk_preview_version, sizeof(vpk_preview_version));
     }
+    free(sfo);
   }
-
-  archiveClose();
 }
 
 static void vpkInstallYes() { freeVpkPreviewIcon(); initMessageDialog(MESSAGE_DIALOG_PROGRESS_BAR, language_container[INSTALLING]); setDialogStep(DIALOG_STEP_INSTALL_CONFIRMED); }
