@@ -41,12 +41,14 @@
 #include "netcheck_dialog.h"
 
 #define GRID_COLS 5
+#define GRID_ROWS 4
+#define GRID_MAX_POS (GRID_ROWS * GRID_COLS)   // 20: keep the cursor within 4 visible rows
 #define GRID_CELL_W 180
-#define GRID_CELL_H 88
+#define GRID_CELL_H 100
 #define GRID_GAP 8
-#define GET_MAX_POSITION() ((vitashell_config.view_mode != 1) ? 11 : 30)
+#define GET_MAX_POSITION() ((vitashell_config.view_mode != 1) ? 11 : GRID_MAX_POS)
 #define GRID_START_X 14
-#define GRID_ICON_SIZE 56
+#define GRID_ICON_SIZE 72
 #include "ime_dialog.h"
 #include "theme.h"
 #include "language.h"
@@ -953,7 +955,7 @@ static int fileBrowserMenuCtrl() {
 
     // Infinite scroll: wrap to last item when at top (single press only)
     if (vitashell_config.scroll_loop && old_pos == base_pos + rel_pos && file_list.length > 0 && accel == 1) {
-      int limit = (vitashell_config.view_mode != 1) ? MAX_ENTRIES : 30;
+      int limit = (vitashell_config.view_mode != 1) ? MAX_ENTRIES : GRID_MAX_POS;
       base_pos = (file_list.length > limit) ? file_list.length - limit : 0;
       rel_pos = file_list.length - 1 - base_pos;
     }
@@ -973,7 +975,7 @@ static int fileBrowserMenuCtrl() {
     steps *= accel;
     for (int s = 0; s < steps; s++) {
         if ((old_pos + 1 + s) < file_list.length) {
-          int limit = (vitashell_config.view_mode != 1) ? MAX_ENTRIES : 30;
+          int limit = (vitashell_config.view_mode != 1) ? MAX_ENTRIES : GRID_MAX_POS;
           if ((rel_pos + 1) < limit) {
             rel_pos++;
           } else if ((base_pos + rel_pos + 1) < file_list.length) {
@@ -999,7 +1001,7 @@ static int fileBrowserMenuCtrl() {
   if (hold_pad[PAD_LTRIGGER] || hold_pad[PAD_RTRIGGER]) {
     int old_pos = base_pos + rel_pos;
 
-    int limit = (vitashell_config.view_mode != 1) ? MAX_ENTRIES : 30;
+    int limit = (vitashell_config.view_mode != 1) ? MAX_ENTRIES : GRID_MAX_POS;
     int skip_amount = vitashell_config.page_speed;
     if (hold_pad[PAD_LTRIGGER]) { // Skip page up
       base_pos = base_pos - skip_amount;
@@ -1365,24 +1367,24 @@ int browserMain() {
           if (my >= 5 && my < 45) {
             // Address card — open context menu
           } else if (my >= 50 && my < 90) {
-            if (mx >= 8 && mx < 106) {
+            if (mx >= 8 && mx < 113) {
               if (dir_level > 0) contextMenuMainEnterCallback(MENU_MAIN_ENTRY_MOVE, NULL);
-            } else if (mx >= 106 && mx < 204) {
+            } else if (mx >= 113 && mx < 218) {
               if (dir_level > 0) contextMenuMainEnterCallback(MENU_MAIN_ENTRY_COPY, NULL);
-            } else if (mx >= 204 && mx < 302) {
+            } else if (mx >= 218 && mx < 323) {
               if (dir_level > 0) contextMenuMainEnterCallback(MENU_MAIN_ENTRY_PASTE, NULL);
-            } else if (mx >= 302 && mx < 400) {
+            } else if (mx >= 323 && mx < 428) {
               if (dir_level > 0) contextMenuMainEnterCallback(MENU_MAIN_ENTRY_DELETE, NULL);
-            } else if (mx >= 400 && mx < 498) {
+            } else if (mx >= 428 && mx < 533) {
               if (dir_level > 0) contextMenuMainEnterCallback(MENU_MAIN_ENTRY_RENAME, NULL);
-            } else if (mx >= 498 && mx < 596) {
+            } else if (mx >= 533 && mx < 638) {
               filter_mode = (filter_mode + 1) % 3;
               refreshFileList();
-            } else if (mx >= 596 && mx < 694) {
+            } else if (mx >= 638 && mx < 743) {
               sort_mode = (sort_mode % 3) + 1;
               last_set_sort_mode = sort_mode;
               refreshFileList();
-            } else if (mx >= 694 && mx < 890) { // Search (double width; New removed)
+            } else if (mx >= 743 && mx < 950) { // Search (double width; New removed)
               if (search_active) {
                 search_active = 0;
                 search_term[0] = '\0';
@@ -1427,7 +1429,7 @@ int browserMain() {
               ci = ((int)((my + scroll_y - START_Y) / GRID_CELL_H)) * GRID_COLS + ((mx - GRID_START_X) / (GRID_CELL_W + GRID_GAP));
             }
             if (ci >= 0 && ci < file_list.length) {
-              int limit = (vitashell_config.view_mode != 1) ? 9 : 16;
+              int limit = (vitashell_config.view_mode != 1) ? 9 : GRID_MAX_POS;
               if (ci >= base_pos && ci < base_pos + limit) {
                 rel_pos = ci - base_pos;
               } else {
@@ -1508,14 +1510,14 @@ int browserMain() {
                     } else if (ty >= 50 && ty < 90) {
                         // Record which button is pressed — execute on release
                         toolbar_press_btn = -1;
-                        if (tx >= 8 && tx < 106) toolbar_press_btn = 0;
-                        else if (tx >= 106 && tx < 204) toolbar_press_btn = 1;
-                        else if (tx >= 204 && tx < 302) toolbar_press_btn = 2;
-                        else if (tx >= 302 && tx < 400) toolbar_press_btn = 3;
-                        else if (tx >= 400 && tx < 498) toolbar_press_btn = 4;
-                        else if (tx >= 498 && tx < 596) toolbar_press_btn = 5;
-                        else if (tx >= 596 && tx < 694) toolbar_press_btn = 6;
-                        else if (tx >= 694 && tx < 890) toolbar_press_btn = 7; // Search (double width; New removed)
+                        if (tx >= 8 && tx < 113) toolbar_press_btn = 0;
+                        else if (tx >= 113 && tx < 218) toolbar_press_btn = 1;
+                        else if (tx >= 218 && tx < 323) toolbar_press_btn = 2;
+                        else if (tx >= 323 && tx < 428) toolbar_press_btn = 3;
+                        else if (tx >= 428 && tx < 533) toolbar_press_btn = 4;
+                        else if (tx >= 533 && tx < 638) toolbar_press_btn = 5;
+                        else if (tx >= 638 && tx < 743) toolbar_press_btn = 6;
+                        else if (tx >= 743 && tx < 950) toolbar_press_btn = 7; // Search (double width; New removed)
                         toolbar_hover_btn = toolbar_press_btn;
                     }
                 }
@@ -1577,7 +1579,7 @@ int browserMain() {
                         uint64_t now = sceKernelGetProcessTimeWide();
                         if (now - last_tap_time < 400000) {
                             // Double tap + hold → context menu
-                             int limit = (vitashell_config.view_mode != 1) ? 9 : 16;
+                             int limit = (vitashell_config.view_mode != 1) ? 9 : GRID_MAX_POS;
                              if (start_i >= base_pos && start_i < base_pos + limit) {
                                  rel_pos = start_i - base_pos;
                              } else {
@@ -1691,24 +1693,24 @@ skip_touch_processing:
                             setContextMenuMode(CONTEXT_MENU_OPENING);
                           // Quick actions row (y:50-90)
                           } else if (ty >= 50 && ty < 90) {
-                               if (tx >= 8 && tx < 106) {          // Mover
+                               if (tx >= 8 && tx < 113) {          // Mover
                                    if (dir_level > 0) contextMenuMainEnterCallback(MENU_MAIN_ENTRY_MOVE, NULL);
-                               } else if (tx >= 106 && tx < 204) { // Copiar
+                               } else if (tx >= 113 && tx < 218) { // Copiar
                                    if (dir_level > 0) contextMenuMainEnterCallback(MENU_MAIN_ENTRY_COPY, NULL);
-                               } else if (tx >= 204 && tx < 302) { // Colar
+                               } else if (tx >= 218 && tx < 323) { // Colar
                                    if (dir_level > 0) contextMenuMainEnterCallback(MENU_MAIN_ENTRY_PASTE, NULL);
-                               } else if (tx >= 302 && tx < 400) { // Apagar
+                               } else if (tx >= 323 && tx < 428) { // Apagar
                                    if (dir_level > 0) contextMenuMainEnterCallback(MENU_MAIN_ENTRY_DELETE, NULL);
-                               } else if (tx >= 400 && tx < 498) { // Renomear
+                               } else if (tx >= 428 && tx < 533) { // Renomear
                                    if (dir_level > 0) contextMenuMainEnterCallback(MENU_MAIN_ENTRY_RENAME, NULL);
-                               } else if (tx >= 498 && tx < 596) { // Filtrar
+                               } else if (tx >= 533 && tx < 638) { // Filtrar
                                    filter_mode = (filter_mode + 1) % 3;
                                    refreshFileList();
-                                } else if (tx >= 596 && tx < 694) { // Agrupar
+                                } else if (tx >= 638 && tx < 743) { // Agrupar
                                     sort_mode = (sort_mode % 3) + 1;
                                     last_set_sort_mode = sort_mode;
                                     refreshFileList();
-                                } else if (tx >= 694 && tx < 890) { // Buscar (largura dupla; Novo removido)
+                                } else if (tx >= 743 && tx < 950) { // Buscar (largura dupla; Novo removido)
                                     if (search_active) {
                                         search_active = 0;
                                         search_term[0] = '\0';
@@ -1800,7 +1802,7 @@ skip_touch_processing:
                                             else { fileBrowserHandleFile(file_entry); create_recent_symlink(file_entry); }
                                         }
                                     } else {
-                                        int limit = (vitashell_config.view_mode != 1) ? 9 : 30;
+                                        int limit = (vitashell_config.view_mode != 1) ? 9 : GRID_MAX_POS;
                                         if (clicked_index >= base_pos && clicked_index < base_pos + limit) {
                                             rel_pos = clicked_index - base_pos;
                                         } else {
@@ -2177,14 +2179,14 @@ FONT_Y_SPACE) - (MAX_ENTRIES * FONT_Y_SPACE);
     if (mouse_visible) {
       int mx = (int)mouse_x, my = (int)mouse_y;
       if (my >= 50 && my < 90) {
-        if (mx >= 8 && mx < 106) toolbar_hover_btn = 0;
-        else if (mx >= 106 && mx < 204) toolbar_hover_btn = 1;
-        else if (mx >= 204 && mx < 302) toolbar_hover_btn = 2;
-        else if (mx >= 302 && mx < 400) toolbar_hover_btn = 3;
-        else if (mx >= 400 && mx < 498) toolbar_hover_btn = 4;
-        else if (mx >= 498 && mx < 596) toolbar_hover_btn = 5;
-        else if (mx >= 596 && mx < 694) toolbar_hover_btn = 6;
-        else if (mx >= 694 && mx < 890) toolbar_hover_btn = 7; // Search (double width; New removed)
+        if (mx >= 8 && mx < 113) toolbar_hover_btn = 0;
+        else if (mx >= 113 && mx < 218) toolbar_hover_btn = 1;
+        else if (mx >= 218 && mx < 323) toolbar_hover_btn = 2;
+        else if (mx >= 323 && mx < 428) toolbar_hover_btn = 3;
+        else if (mx >= 428 && mx < 533) toolbar_hover_btn = 4;
+        else if (mx >= 533 && mx < 638) toolbar_hover_btn = 5;
+        else if (mx >= 638 && mx < 743) toolbar_hover_btn = 6;
+        else if (mx >= 743 && mx < 950) toolbar_hover_btn = 7; // Search (double width; New removed)
       }
     }
 
@@ -2336,7 +2338,7 @@ FONT_Y_SPACE) - (MAX_ENTRIES * FONT_Y_SPACE);
       int i;
       int max_i = 0;
       if (vitashell_config.view_mode != 1) max_i = start_i + MAX_ENTRIES + 2;
-      else max_i = start_i + (GRID_COLS * 6) + GRID_COLS;
+      else max_i = start_i + GRID_COLS * (GRID_ROWS + 2);
       
       for (i = start_i; i < max_i && i < file_list.length; i++) {
         if (!file_entry) break; // CRITICAL SAFETY CHECK
@@ -2474,7 +2476,7 @@ COLOR_ALPHA(themeListBg(vitashell_config.theme_preset), 100) : themeListBg(vitas
             vita2d_draw_texture_tint(icon, cur_margin_x, y + 10.0f, tint_color);
           } else {
             float icon_x = x + (GRID_CELL_W - GRID_ICON_SIZE) / 2.0f;
-            float icon_y = y + 6;
+            float icon_y = y + 4;
             float s = (float)GRID_ICON_SIZE / (float)vita2d_texture_get_width(icon);
             vita2d_draw_texture_tint_scale(icon, icon_x, icon_y, s, s, tint_color);
           }
@@ -2550,7 +2552,7 @@ COLOR_ALPHA(themeListBg(vitashell_config.theme_preset), 100) : themeListBg(vitas
         } else if (vitashell_config.view_mode == 1) {
             // Center name below icon in grid
             draw_x = x + (GRID_CELL_W - pgf_text_width(file_name)) / 2.0f;
-            draw_y = y + GRID_ICON_SIZE + 10;
+            draw_y = y + GRID_ICON_SIZE + 6;
             if (strlen(file_name) > 16) {
                 strcpy(file_name + 13, "...");
             }

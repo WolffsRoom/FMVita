@@ -478,7 +478,7 @@ void drawShellInfo(const char *path) {
     char search_lbl[32];
     // "New" (index 8) removed from the toolbar; "Search" (index 7) takes the
     // freed space and spans a double-width slot.
-    int n = 8, bw = 93, gap = 5;
+    int n = 8, bw = 100, gap = 5;
 
     for (int bi = 0; bi < n; bi++) {
       int bx = 10 + bi * (bw + gap);
