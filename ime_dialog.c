@@ -27,7 +27,9 @@ static const char *ime_initial_text = NULL;
 static uint16_t ime_title_utf16[SCE_IME_DIALOG_MAX_TITLE_LENGTH];
 static uint16_t ime_initial_text_utf16[SCE_IME_DIALOG_MAX_TEXT_LENGTH];
 static uint16_t ime_input_text_utf16[SCE_IME_DIALOG_MAX_TEXT_LENGTH + 1];
-static uint8_t ime_input_text_utf8[SCE_IME_DIALOG_MAX_TEXT_LENGTH + 1];
+// UTF-8 can use up to 4 bytes per UTF-16 code unit, so size for the worst case.
+// (A 1-byte-per-char buffer overflowed on names with accents/CJK/emoji.)
+static uint8_t ime_input_text_utf8[SCE_IME_DIALOG_MAX_TEXT_LENGTH * 4 + 1];
 
 static void utf16_to_utf8(const uint16_t *src, uint8_t *dst) {
   int i;
